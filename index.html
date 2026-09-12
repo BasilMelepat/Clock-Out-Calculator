@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time & Attendance Tracker</title>
+<style>
+  :root {
+    --deep: #0B2A4A;
+    --deep2: #0F3A63;
+    --sky: #4FA8E8;
+    --sky-light: #EAF4FC;
+    --ink: #0B2A4A;
+    --muted: #4A6580;
+    --line: #D7E6F2;
+    --good: #1E8E5A;
+    --card: #FFFFFF;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; max-height: 0; transform: translateY(-6px); }
+    to { opacity: 1; max-height: 600px; transform: translateY(0); }
+  }
+  @keyframes pulseFlip {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.015); }
+    100% { transform: scale(1); }
+  }
+  .reveal {
+    animation: slideDown 0.28s ease;
+    overflow: hidden;
+  }
+  .flip-pulse {
+    animation: pulseFlip 0.5s ease;
+  }
+  .mobile-sticky {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--deep);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(11,42,74,0.2);
+    transition: background 0.4s ease;
+  }
+  .mobile-sticky.exceeded {
+    background: var(--good);
+  }
+  .mobile-sticky .msl {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 10.5px;
+    color: #C9DDEF;
+    font-weight: 700;
+  }
+  .mobile-sticky .mst {
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 780px) {
+    .mobile-sticky { display: flex; }
+  }
+  .log-input-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    align-items: end;
+    background: var(--sky-light);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .log-input-box label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .log-duration-input,
+  .log-target-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    background: #FCFEFF;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .log-duration-input:focus,
+  .log-target-input:focus { border-color: var(--sky); }
+  .log-duration-input::placeholder { color: #9FB4C7; font-weight: 500; }
+  .log-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px dashed var(--sky);
+    background: transparent;
+    color: var(--deep2);
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  .log-add-btn:hover { background: #fff; }
+  .log-add-btn.editing {
+    background: var(--sky);
+    color: #fff;
+    border-style: solid;
+  }
+  .log-list-header {
+    display: grid;
+    grid-template-columns: 28px 1fr 72px 82px 44px;
+    gap: 6px;
+    padding: 0 6px;
+    margin-bottom: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .log-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 72px 82px 44px;
+    gap: 6px;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 8px;
+    margin-bottom: 8px;
+    background: var(--sky-light);
+  }
+  .log-row .log-day {
+    font-weight: 700;
+    color: var(--sky);
+    font-size: 13px;
+  }
+  .log-row .log-clocked {
+    font-weight: 700;
+    color: var(--deep2);
+    font-size: 13.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .log-row .log-target {
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 13.5px;
+  }
+  .log-row .log-diff {
+    font-weight: 700;
+    font-size: 13.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .log-row .log-diff.short { color: #C0392B; }
+  .log-row .log-diff.ahead { color: var(--good); }
+  .log-row .log-diff.exact { color: var(--muted); }
+  .log-row-icons {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .log-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px;
+    line-height: 1;
+    color: var(--muted);
+    opacity: 0.85;
+  }
+  .log-icon-btn:hover { opacity: 1; color: #C0392B; }
+  .log-summary {
+    margin-top: 6px;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--sky-light);
+    border: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--deep2);
+    line-height: 1.6;
+  }
+  .log-summary.short { background: #FFF3E8; border-color: #F0C48A; color: #9A5A0F; }
+  .log-summary.clear { background: #E4F8ED; border-color: var(--good); color: var(--good); }
+  .log-summary b { font-variant-numeric: tabular-nums; }
+  .sync-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 9px;
+    border-radius: 10px;
+    border: 1.5px solid var(--sky);
+    background: #fff;
+    color: var(--deep2);
+    font-weight: 700;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .sync-btn:hover { background: var(--sky-light); }
+  .sync-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+    background: linear-gradient(160deg, var(--sky-light) 0%, #FFFFFF 55%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 24px;
+    color: var(--ink);
+  }
+  .wrap {
+    width: 100%;
+    max-width: 1360px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.05fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .col { display: flex; flex-direction: column; gap: 16px; }
+  @media (max-width: 1100px) {
+    .wrap { grid-template-columns: 1fr 1fr; max-width: 900px; }
+    .col3 { grid-column: 1 / -1; }
+  }
+  @media (max-width: 780px) {
+    body { padding: 16px 12px; }
+    .wrap { grid-template-columns: 1fr; gap: 14px; }
+    .col3 { grid-column: auto; }
+    .card { padding: 16px; }
+    .log-input-card { grid-template-columns: 1fr; padding: 12px; }
+    .log-add-btn { padding: 12px; }
+    .log-list-header,
+    .log-row {
+      grid-template-columns: 22px 1fr 44px 58px 40px;
+      gap: 4px;
+    }
+    .log-row { padding: 8px 6px; }
+    .log-row .log-day,
+    .log-row .log-clocked,
+    .log-row .log-target,
+    .log-row .log-diff {
+      font-size: 12px;
+    }
+    .log-list-header { font-size: 10px; }
+    .log-icon-btn { font-size: 12px; }
+    .log-row-icons { gap: 3px; }
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 8px 30px rgba(11,42,74,0.06);
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--deep2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  input[type="time"], input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    font-size: 15px;
+    color: var(--ink);
+    background: #FCFEFF;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input[type="time"]:focus, input[type="number"]:focus {
+    border-color: var(--sky);
+  }
+  .row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .row > div { flex: 1; }
+  .break-item {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    background: var(--sky-light);
+    position: relative;
+  }
+  .break-item .row { margin-bottom: 0; }
+  .break-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--deep2);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .break-duration {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sky);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 9px;
+  }
+  .remove-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .remove-btn:hover { color: #C0392B; }
+  .add-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1.5px dashed var(--sky);
+    background: transparent;
+    color: var(--deep2);
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .add-btn:hover { background: var(--sky-light); }
+  .result {
+    background: linear-gradient(135deg, var(--deep) 0%, var(--deep2) 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(11,42,74,0.25);
+    transition: background 0.5s ease;
+  }
+  .result.exceeded {
+    background: linear-gradient(135deg, #1E8E5A 0%, #17A860 100%);
+    box-shadow: 0 10px 30px rgba(30,142,90,0.3);
+  }
+  .result.exceeded .label { color: #D9F7E8; }
+  .result.exceeded .detail { color: #D9F7E8; }
+  .result.exceeded .breakdown { color: #D9F7E8; border-top-color: rgba(255,255,255,0.25); }
+  .result .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--sky);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .result .time {
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    line-height: 1.1;
+  }
+  .result .detail {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #C9DDEF;
+  }
+  .breakdown {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: #C9DDEF;
+  }
+  .breakdown b { color: #fff; }
+  .error {
+    text-align: center;
+    color: #C0392B;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px;
+  }
+  .countdown-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+  }
+  .countdown-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--sky);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .countdown-time {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--deep);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+  }
+  .countdown-time .secs {
+    color: var(--sky);
+  }
+  .countdown-sub {
+    margin-top: 8px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .countdown-sub.done {
+    color: var(--good);
+    font-weight: 700;
+  }
+  .worked-row {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .worked-row b {
+    color: var(--deep);
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-wrap {
+    margin-top: 16px;
+  }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .progress-labels .pct {
+    color: var(--deep);
+    font-weight: 800;
+  }
+  .progress-track {
+    width: 100%;
+    height: 10px;
+    background: var(--sky-light);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--sky) 0%, var(--deep2) 100%);
+    transition: width 0.6s ease, background 0.5s ease;
+  }
+  .progress-fill.complete {
+    background: linear-gradient(90deg, #22C57A 0%, #1E8E5A 100%);
+  }
+  .date-banner {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: none;
+    color: var(--sky);
+  }
+  textarea, input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    font-size: 14px;
+    color: var(--ink);
+    background: #FCFEFF;
+    outline: none;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color .15s;
+  }
+  textarea:focus, input[type="text"]:focus {
+    border-color: var(--sky);
+  }
+  .early-result {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--sky-light);
+    border: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--deep2);
+    line-height: 1.6;
+  }
+  .early-result.short {
+    background: #FFF3E8;
+    border-color: #F0C48A;
+    color: #9A5A0F;
+  }
+  .early-result.ontrack {
+    background: #E4F8ED;
+    border-color: var(--good);
+    color: var(--good);
+  }
+  .early-result b { font-variant-numeric: tabular-nums; }
+  .clear-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background .15s, color .15s;
+  }
+  .clear-btn:hover {
+    background: var(--sky-light);
+    color: #C0392B;
+  }
+  .collapse-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 2px 9px;
+    border-radius: 8px;
+    line-height: 1;
+    transition: background .15s, transform .25s;
+  }
+  .collapse-btn:hover {
+    background: var(--sky-light);
+    color: var(--deep2);
+  }
+  #dailyLogBody {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.25s ease, margin 0.3s ease;
+    max-height: 2000px;
+    opacity: 1;
+  }
+  #dailyLogBody.collapsed {
+    max-height: 0;
+    opacity: 0;
+  }
+  .log-io-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .log-io-btn {
+    flex: 1;
+    min-width: 90px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    color: var(--deep2);
+    font-weight: 700;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    white-space: nowrap;
+  }
+  .log-io-btn:hover {
+    background: var(--sky-light);
+    border-color: var(--sky);
+  }
+  .log-io-btn.copied {
+    background: #E4F8ED;
+    border-color: var(--good);
+    color: var(--good);
+  }
+  .log-paste-feedback {
+    font-size: 11.5px;
+    margin-top: 8px;
+    font-weight: 700;
+  }
+  .log-paste-feedback.success { color: var(--good); }
+  .log-paste-feedback.error { color: #C0392B; }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 42, 74, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .modal-box {
+    background: #fff;
+    border-radius: 18px;
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(11,42,74,0.3);
+    animation: slideDown 0.22s ease;
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .modal-header span {
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--deep2);
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: #C0392B;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  .modal-close:hover { opacity: 0.7; }
+  .modal-textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1.5px solid var(--line);
+    font-size: 13px;
+    font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+    color: var(--ink);
+    background: #FCFEFF;
+    resize: vertical;
+    outline: none;
+  }
+  .modal-textarea:focus { border-color: var(--sky); }
+  .modal-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 10px 0 4px;
+    line-height: 1.5;
+  }
+  .modal-import-btn {
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--sky);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .modal-import-btn:hover { background: var(--deep2); }
+  .mini-countdown-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    font-weight: 700;
+    text-align: center;
+    margin-top: 4px;
+  }
+  .mini-countdown-time {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--deep);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    letter-spacing: 0.5px;
+    margin: 4px 0 2px;
+  }
+  .mini-countdown-time.passed {
+    color: var(--good);
+  }
+  .mini-countdown-sub {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .late-motivation {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #FFF3E8;
+    border: 1px solid #F0C48A;
+    color: #9A5A0F;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .late-motivation.clear {
+    background: #E4F8ED;
+    border-color: var(--good);
+    color: var(--good);
+  }
+  .late-motivation b { font-variant-numeric: tabular-nums; }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 14px 0 4px;
+    padding: 10px 12px;
+    background: var(--sky-light);
+    border-radius: 10px;
+    border: 1px solid var(--line);
+  }
+  .toggle-row label {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--deep2);
+  }
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    flex: none;
+  }
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #C7D9E8;
+    border-radius: 999px;
+    transition: background-color .2s;
+  }
+  .toggle-slider::before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+  }
+  .toggle-switch input:checked + .toggle-slider {
+    background-color: var(--sky);
+  }
+  .toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(18px);
+  }
+</style>
+</head>
+<body>
+<div class="mobile-sticky" id="mobileSticky">
+  <span class="msl">Clock-Out</span>
+  <span class="mst" id="mobileStickyTime">--:--</span>
+</div>
+<div class="wrap">
+  <div class="col col3">
+    <div class="card">
+      <div class="card-title">
+        <span>📅 Daily Work Log</span>
+        <button class="collapse-btn" id="toggleDailyLogBtn" type="button" aria-label="Minimize Daily Work Log">⬆️</button>
+      </div>
+
+      <div id="dailyLogBody">
+      <div class="log-input-card">
+        <div class="log-input-box">
+          <label>Hours Clocked</label>
+          <input type="text" id="logDuration" class="log-duration-input" placeholder="00h 00m 00s">
+        </div>
+        <div class="log-input-box">
+          <label>Working Hours</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" id="logTarget" class="log-target-input" value="08">
+        </div>
+        <button class="log-add-btn" id="addLogEntryBtn" type="button">➕ Add Day</button>
+      </div>
+
+      <div class="log-io-row">
+        <button class="log-io-btn" id="logCopyBtn" type="button">📄 Copy Data</button>
+        <button class="log-io-btn" id="logBulkBtn" type="button">🗃️ Bulk Import</button>
+      </div>
+
+      <div id="logListWrap" style="display:none;">
+        <div class="log-list-header">
+          <span>Day</span>
+          <span>Clocked</span>
+          <span>Target Hour</span>
+          <span>Difference</span>
+          <span></span>
+        </div>
+        <div id="logEntriesContainer"></div>
+      </div>
+
+      <div class="log-summary clear" id="logSummary">Log your daily hours to track your running-late balance automatically.</div>
+      <button class="sync-btn" id="syncLogBtn" type="button" disabled>⇄ Sync to Running Late Balance</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <div class="card-title">
+        <span>📋 Shift Details</span>
+        <span class="date-banner" id="dateBanner"></span>
+      </div>
+      <div class="row">
+        <div>
+          <label for="clockIn">🕘 Clock-in Time</label>
+          <input type="time" id="clockIn" value="09:30">
+        </div>
+        <div>
+          <label for="targetHours">🎯 Target Working Hours</label>
+          <input type="number" id="targetHours" value="8" min="0" step="0.25">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>☕ Scheduled Breaks</span>
+        <button class="clear-btn" id="clearBreaksBtn" type="button" style="display:none;" aria-label="Clear all breaks">🗑️ Clear All</button>
+      </div>
+      <div id="breaksContainer"></div>
+      <button class="add-btn" id="addBreakBtn">➕ Add Break</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="lateTitleRow" style="display:none;">
+        <span>⏱️ Running Late Balance</span>
+        <button class="clear-btn" id="clearLateBtn" type="button" aria-label="Clear running late balance">🗑️ Clear</button>
+      </div>
+      <button class="add-btn" id="addLatePlanBtn" type="button">➕ Add Running Late Time</button>
+      <div id="latePlannerBody" style="display:none;">
+        <div class="row">
+          <div>
+            <label for="lateMinutes">Minutes Behind</label>
+            <input type="number" id="lateMinutes" placeholder="0" min="0" step="1">
+          </div>
+          <div>
+            <label for="lateSeconds">Seconds Behind</label>
+            <input type="number" id="lateSeconds" placeholder="0" min="0" max="59" step="1">
+          </div>
+        </div>
+        <div class="toggle-row">
+          <label for="lateIncludeToggle">Add this backlog to today's time remaining</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="lateIncludeToggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="late-motivation" id="lateMotivation">Enter your running-late balance to see today's adjusted target.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="countdown-card">
+      <div class="countdown-label">⏳ Time Remaining</div>
+      <div class="countdown-time" id="countdownTime">--:--:--</div>
+      <div class="countdown-sub" id="countdownSub">📌 Set your clock-in time above to see this fill in</div>
+      <div class="worked-row">
+        <span>⏱️ Elapsed Time: <b id="elapsedOut">--:--:--</b></span>
+        <span>✅ Hours Worked: <b id="totalHoursOut">--</b></span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-labels">
+          <span>📊 Progress</span>
+          <span class="pct" id="progressPct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result" id="resultCard">
+      <div class="label">🏁 Clock-Out Time</div>
+      <div class="time" id="clockOutTime">--:--</div>
+      <div class="detail" id="resultDetail"></div>
+      <div class="breakdown">
+        <span>💼 Hours Worked: <b id="workHoursOut">--</b></span>
+        <span>☕ Break Time: <b id="breakHoursOut">--</b></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="earlyTitleRow" style="display:none;">
+        <span>📤 Early Departure Planner</span>
+        <button class="clear-btn" id="clearEarlyBtn" type="button" aria-label="Clear early departure plan">🗑️ Clear</button>
+      </div>
+      <button class="add-btn" id="addEarlyPlanBtn" type="button">➕ Add Early Departure Plan</button>
+      <div id="earlyPlannerBody" style="display:none;">
+        <div class="row">
+          <div>
+            <label for="earlyTime">Planned Departure Time</label>
+            <input type="time" id="earlyTime">
+          </div>
+        </div>
+        <div id="earlyCountdownWrap" style="display:none;">
+          <div class="mini-countdown-label">Time Remaining Until Departure</div>
+          <div class="mini-countdown-time" id="earlyCountdownTime">--:--:--</div>
+          <div class="mini-countdown-sub" id="earlyCountdownSub">Set a planned departure time above</div>
+        </div>
+        <div class="early-result" id="earlyResult">Enter a time above to see the projected impact on your hours.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="logBulkOverlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>Work Log Bulk Import</span>
+      <button class="modal-close" id="logBulkCloseBtn" type="button" aria-label="Close">✕</button>
+    </div>
+    <textarea id="logBulkArea" class="modal-textarea" placeholder="8h 1m 36s, 8&#10;8h 0m 7s, 8&#10;7h 59m 4s, 8"></textarea>
+    <div class="modal-hint">One entry per line: <b>Xh Ym Zs, Target</b> (comma or tab separated). Any part (h/m/s) can be omitted.</div>
+    <div class="log-paste-feedback" id="logBulkFeedback"></div>
+    <button id="logBulkImportBtn" class="modal-import-btn" type="button">Import</button>
+  </div>
+</div>
+
+<script>
+  const breaksContainer = document.getElementById('breaksContainer');
+  const addBreakBtn = document.getElementById('addBreakBtn');
+  let breakCount = 0;
+
+  const breakEmojis = ['🍽️', '☕', '🚻'];
+
+  function updateClearBreaksVisibility() {
+    const clearBreaksBtn = document.getElementById('clearBreaksBtn');
+    const hasBreaks = breaksContainer.querySelectorAll('.break-item').length > 0;
+    clearBreaksBtn.style.display = hasBreaks ? 'inline-block' : 'none';
+  }
+
+  function addBreak(start, end) {
+    breakCount++;
+    const id = breakCount;
+    const emoji = breakEmojis[(id - 1) % breakEmojis.length];
+    const div = document.createElement('div');
+    div.className = 'break-item';
+    div.dataset.id = id;
+    div.innerHTML = `
+      <button class="remove-btn" data-remove="${id}" aria-label="Remove this break">❌</button>
+      <div class="break-label"><span class="break-label-text">${emoji} Break ${id}</span><span class="break-duration" data-duration="${id}">--</span></div>
+      <div class="row">
+        <div>
+          <label>Start Time</label>
+          <input type="time" class="break-start" value="${start || '13:00'}">
+        </div>
+        <div>
+          <label>End Time</label>
+          <input type="time" class="break-end" value="${end || '13:30'}">
+        </div>
+      </div>
+    `;
+    breaksContainer.appendChild(div);
+    div.querySelector('[data-remove]').addEventListener('click', () => {
+      div.remove();
+      renumber();
+      updateClearBreaksVisibility();
+      calculate();
+    });
+    div.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+      updateBreakDuration(div);
+      calculate();
+    }));
+    updateClearBreaksVisibility();
+    updateBreakDuration(div);
+  }
+
+  function updateBreakDuration(item) {
+    const durationEl = item.querySelector('.break-duration');
+    const s = item.querySelector('.break-start').value;
+    const e = item.querySelector('.break-end').value;
+    if (!s || !e) {
+      durationEl.textContent = '--';
+      return;
+    }
+    const sMin = toMinutes(s);
+    let eMin = toMinutes(e);
+    if (eMin < sMin) eMin += 1440;
+    durationEl.textContent = formatDuration(eMin - sMin);
+  }
+
+  function updateAllBreakDurations() {
+    breaksContainer.querySelectorAll('.break-item').forEach(updateBreakDuration);
+  }
+
+  function renumber() {
+    const items = breaksContainer.querySelectorAll('.break-item');
+    items.forEach((item, idx) => {
+      const emoji = breakEmojis[idx % breakEmojis.length];
+      item.querySelector('.break-label-text').textContent = `${emoji} Break ${idx + 1}`;
+    });
+  }
+
+  addBreakBtn.addEventListener('click', () => { addBreak(); calculate(); });
+
+  document.getElementById('clearBreaksBtn').addEventListener('click', () => {
+    const count = breaksContainer.querySelectorAll('.break-item').length;
+    if (count > 1 && !confirm(`Remove all ${count} breaks? This can't be undone.`)) {
+      return;
+    }
+    breaksContainer.innerHTML = '';
+    breakCount = 0;
+    updateClearBreaksVisibility();
+    calculate();
+  });
+
+  function toMinutes(hhmm) {
+    if (!hhmm) return null;
+    const [h, m] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function minutesToTimeStr(mins) {
+    mins = ((mins % 1440) + 1440) % 1440;
+    let h = Math.floor(mins / 60);
+    const m = Math.round(mins % 60);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    let h12 = h % 12;
+    if (h12 === 0) h12 = 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+  }
+
+  function formatDuration(mins) {
+    const h = Math.floor(mins / 60);
+    const m = Math.round(mins % 60);
+    if (h === 0) return `${m}m`;
+    if (m === 0) return `${h}h`;
+    return `${h}h ${m}m`;
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function secondsToHMS(totalSeconds) {
+    totalSeconds = Math.max(0, Math.round(totalSeconds));
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return { h, m, s, str: `${pad(h)}:${pad(m)}:${pad(s)}` };
+  }
+
+  let state = {
+    clockInDate: null,
+    clockOutDate: null,
+    totalBreakMin: 0,
+    targetWorkMin: 0,
+    earlyDepartureDate: null,
+    lateSectionActive: false
+  };
+
+  function calculate() {
+    const clockIn = document.getElementById('clockIn').value;
+    const targetHours = parseFloat(document.getElementById('targetHours').value) || 0;
+    const lateMinutes = parseFloat(document.getElementById('lateMinutes').value) || 0;
+    const lateSeconds = parseFloat(document.getElementById('lateSeconds').value) || 0;
+    const rawBacklogMin = Math.max(0, lateMinutes + lateSeconds / 60);
+    const includeLate = document.getElementById('lateIncludeToggle').checked;
+    const backlogMin = (includeLate && state.lateSectionActive) ? rawBacklogMin : 0;
+    const errorEl = document.getElementById('resultDetail');
+    const timeEl = document.getElementById('clockOutTime');
+    const workOut = document.getElementById('workHoursOut');
+    const breakOut = document.getElementById('breakHoursOut');
+
+    if (!clockIn) {
+      timeEl.textContent = '--:--';
+      errorEl.textContent = '👇 Please enter your clock-in time';
+      workOut.textContent = '--';
+      breakOut.textContent = '--';
+      state.clockInDate = null;
+      state.clockOutDate = null;
+      updateCountdown();
+      calculateEarlyPlan();
+      updateLateMotivation(rawBacklogMin, includeLate, targetHours, null);
+      document.getElementById('mobileStickyTime').textContent = '--:--';
+      document.getElementById('mobileSticky').classList.remove('exceeded');
+      return;
+    }
+
+    const clockInMin = toMinutes(clockIn);
+    let totalBreakMin = 0;
+
+    breaksContainer.querySelectorAll('.break-item').forEach(item => {
+      const s = item.querySelector('.break-start').value;
+      const e = item.querySelector('.break-end').value;
+      if (s && e) {
+        const sMin = toMinutes(s);
+        let eMin = toMinutes(e);
+        if (eMin < sMin) eMin += 1440;
+        totalBreakMin += (eMin - sMin);
+      }
+    });
+
+    const baseTargetMin = targetHours * 60;
+    const targetWorkMin = baseTargetMin + backlogMin;
+    const clockOutMin = clockInMin + targetWorkMin + totalBreakMin;
+
+    timeEl.textContent = minutesToTimeStr(clockOutMin);
+    document.getElementById('mobileStickyTime').textContent = minutesToTimeStr(clockOutMin);
+    errorEl.textContent = `🕘 Clocked in at ${minutesToTimeStr(clockInMin)}`;
+    workOut.textContent = formatDuration(targetWorkMin);
+    breakOut.textContent = totalBreakMin > 0 ? formatDuration(totalBreakMin) : 'No breaks taken';
+
+    // Build real Date objects anchored to today for the live countdown
+    const now = new Date();
+    const clockInDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    clockInDate.setMinutes(clockInMin);
+    const clockOutDate = new Date(clockInDate.getTime());
+    clockOutDate.setMinutes(clockOutDate.getMinutes() + targetWorkMin + totalBreakMin);
+
+    state.clockInDate = clockInDate;
+    state.clockOutDate = clockOutDate;
+    state.totalBreakMin = totalBreakMin;
+    state.targetWorkMin = targetWorkMin;
+
+    updateCountdown();
+    calculateEarlyPlan();
+    updateLateMotivation(rawBacklogMin, includeLate, targetHours, clockOutDate);
+  }
+
+  function formatMinSec(totalMinutes) {
+    const totalSeconds = Math.round(totalMinutes * 60);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    if (m === 0) return `${s}s`;
+    if (s === 0) return `${m}m`;
+    return `${m}m ${s}s`;
+  }
+
+  function updateLateMotivation(backlogMin, includeLate, targetHours, clockOutDate) {
+    const box = document.getElementById('lateMotivation');
+    box.classList.remove('clear');
+
+    if (backlogMin <= 0) {
+      box.classList.add('clear');
+      box.innerHTML = `✅ No outstanding backlog. You are on track to meet your ${targetHours}h target today.`;
+      return;
+    }
+
+    const backlogStr = formatMinSec(backlogMin);
+
+    if (!includeLate) {
+      box.innerHTML = `⏸️ A backlog of <b>${backlogStr}</b> is recorded but currently excluded from today's target, which remains at <b>${targetHours}h</b>. Enable the toggle above to factor it into today's plan.`;
+      return;
+    }
+
+    const newTargetStr = formatDuration(targetHours * 60 + backlogMin);
+
+    let clockOutLine = '';
+    if (clockOutDate) {
+      const clockOutStr = clockOutDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }).toUpperCase();
+      clockOutLine = ` Projected clock-out: <b>${clockOutStr}</b>.`;
+    }
+
+    box.innerHTML = `⏱️ Backlog of <b>${backlogStr}</b> has been added to today's target, bringing it to <b>${newTargetStr}</b>.${clockOutLine} Completing today's shift as planned will fully offset the shortfall.`;
+  }
+
+  // ---- Daily Work Log ----
+  const dailyLogBody = document.getElementById('dailyLogBody');
+  const toggleDailyLogBtn = document.getElementById('toggleDailyLogBtn');
+
+  toggleDailyLogBtn.addEventListener('click', () => {
+    const collapsed = dailyLogBody.classList.toggle('collapsed');
+    toggleDailyLogBtn.textContent = collapsed ? '⬇️' : '⬆️';
+    toggleDailyLogBtn.setAttribute('aria-label', collapsed ? 'Expand Daily Work Log' : 'Minimize Daily Work Log');
+  });
+
+  const logEntriesContainer = document.getElementById('logEntriesContainer');
+  const logListWrap = document.getElementById('logListWrap');
+  const addLogEntryBtn = document.getElementById('addLogEntryBtn');
+  const syncLogBtn = document.getElementById('syncLogBtn');
+  const logDuration = document.getElementById('logDuration');
+  const logTarget = document.getElementById('logTarget');
+  let logEntryCount = 0;
+  let logEditingId = null;
+  let logEntries = [];
+
+  function clampField(el, max) {
+    el.value = el.value.replace(/[^0-9]/g, '');
+    let v = parseInt(el.value, 10);
+    if (isNaN(v)) return;
+    if (v > max) v = max;
+    el.value = String(v);
+  }
+  function padOnBlur(el) {
+    if (el.value === '') return;
+    const v = parseInt(el.value, 10);
+    if (!isNaN(v)) el.value = pad(v);
+  }
+  logTarget.addEventListener('input', () => clampField(logTarget, 99));
+  logTarget.addEventListener('blur', () => padOnBlur(logTarget));
+
+  function parseDurationText(text) {
+    const clean = (text || '').trim();
+    if (!clean) return null;
+    const hMatch = clean.match(/(\d+)\s*h/i);
+    const mMatch = clean.match(/(\d+)\s*m(?!s)/i);
+    const sMatch = clean.match(/(\d+)\s*s/i);
+    if (!hMatch && !mMatch && !sMatch) return null;
+    return {
+      hh: hMatch ? parseInt(hMatch[1], 10) : 0,
+      mm: mMatch ? parseInt(mMatch[1], 10) : 0,
+      ss: sMatch ? parseInt(sMatch[1], 10) : 0
+    };
+  }
+
+  function flashInvalid(el) {
+    el.style.borderColor = '#E0453C';
+    setTimeout(() => { el.style.borderColor = ''; }, 700);
+  }
+
+  function formatDiffMinSec(diffSeconds) {
+    const sign = diffSeconds < 0 ? '-' : '';
+    const abs = Math.abs(diffSeconds);
+    const totalMinutes = Math.floor(abs / 60);
+    const secs = Math.round(abs % 60);
+    return `${sign}${totalMinutes}:${pad(secs)}`;
+  }
+
+  function renderLogList() {
+    logEntriesContainer.innerHTML = '';
+    logListWrap.style.display = logEntries.length ? 'block' : 'none';
+
+    logEntries.forEach((entry, idx) => {
+      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
+      const targetSeconds = entry.target * 3600;
+      const diffSeconds = clockedSeconds - targetSeconds;
+
+      let diffClass = 'exact';
+      if (diffSeconds < 0) diffClass = 'short';
+      else if (diffSeconds > 0) diffClass = 'ahead';
+
+      const row = document.createElement('div');
+      row.className = 'log-row';
+      row.innerHTML = `
+        <span class="log-day">${pad(idx + 1)}</span>
+        <span class="log-clocked">${pad(entry.hh)}:${pad(entry.mm)}:${pad(entry.ss)}</span>
+        <span class="log-target">${pad(entry.target)}</span>
+        <span class="log-diff ${diffClass}">${formatDiffMinSec(diffSeconds)}</span>
+        <span class="log-row-icons">
+          <button class="log-icon-btn" data-edit="${entry.id}" aria-label="Edit this entry">⏱️</button>
+          <button class="log-icon-btn" data-remove="${entry.id}" aria-label="Delete this entry">❌</button>
+        </span>
+      `;
+      logEntriesContainer.appendChild(row);
+    });
+
+    logEntriesContainer.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', () => startEditLogEntry(parseInt(btn.dataset.edit, 10)));
+    });
+    logEntriesContainer.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        logEntries = logEntries.filter(e => e.id !== parseInt(btn.dataset.remove, 10));
+        if (logEditingId === parseInt(btn.dataset.remove, 10)) cancelEditLogEntry();
+        renderLogList();
+        calculateLog();
+      });
+    });
+  }
+
+  function startEditLogEntry(id) {
+    const entry = logEntries.find(e => e.id === id);
+    if (!entry) return;
+    logEditingId = id;
+    logDuration.value = `${entry.hh}h ${entry.mm}m ${entry.ss}s`;
+    logTarget.value = pad(entry.target);
+    addLogEntryBtn.textContent = '✓ Update';
+    addLogEntryBtn.classList.add('editing');
+    logDuration.focus();
+  }
+
+  function cancelEditLogEntry() {
+    logEditingId = null;
+    addLogEntryBtn.textContent = '➕ Add Day';
+    addLogEntryBtn.classList.remove('editing');
+    logDuration.value = '';
+  }
+
+  addLogEntryBtn.addEventListener('click', () => {
+    const parsed = parseDurationText(logDuration.value);
+    const target = parseInt(logTarget.value, 10) || 0;
+
+    if (!parsed) {
+      flashInvalid(logDuration);
+      return;
+    }
+
+    if (logEditingId !== null) {
+      const entry = logEntries.find(e => e.id === logEditingId);
+      if (entry) {
+        entry.hh = parsed.hh; entry.mm = parsed.mm; entry.ss = parsed.ss; entry.target = target;
+      }
+      cancelEditLogEntry();
+    } else {
+      logEntryCount++;
+      logEntries.push({ id: logEntryCount, hh: parsed.hh, mm: parsed.mm, ss: parsed.ss, target });
+      logDuration.value = '';
+      logDuration.focus();
+    }
+
+    renderLogList();
+    calculateLog();
+  });
+
+  function calculateLog() {
+    const summary = document.getElementById('logSummary');
+    summary.classList.remove('short', 'clear');
+
+    if (logEntries.length === 0) {
+      summary.classList.add('clear');
+      summary.textContent = 'Log your daily hours to track your running-late balance automatically.';
+      syncLogBtn.disabled = true;
+      return;
+    }
+
+    let totalDiffSeconds = 0;
+    logEntries.forEach(entry => {
+      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
+      const targetSeconds = entry.target * 3600;
+      totalDiffSeconds += (clockedSeconds - targetSeconds);
+    });
+
+    const backlogMin = Math.max(0, -totalDiffSeconds / 60);
+    const aheadMin = Math.max(0, totalDiffSeconds / 60);
+    const count = logEntries.length;
+
+    if (backlogMin > 0.5) {
+      summary.classList.add('short');
+      summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're running a total backlog of <b>${formatMinSec(backlogMin)}</b>.`;
+      syncLogBtn.disabled = false;
+    } else if (aheadMin > 0.5) {
+      summary.classList.add('clear');
+      summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${formatMinSec(aheadMin)}</b>. No backlog.`;
+      syncLogBtn.disabled = true;
+    } else {
+      summary.classList.add('clear');
+      summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're exactly on target. No backlog.`;
+      syncLogBtn.disabled = true;
+    }
+  }
+
+  syncLogBtn.addEventListener('click', () => {
+    let totalDiffSeconds = 0;
+    logEntries.forEach(entry => {
+      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
+      const targetSeconds = entry.target * 3600;
+      totalDiffSeconds += (clockedSeconds - targetSeconds);
+    });
+    const backlogMin = Math.max(0, -totalDiffSeconds / 60);
+    const wholeMin = Math.floor(backlogMin);
+    const secs = Math.round((backlogMin - wholeMin) * 60);
+
+    if (!document.getElementById('lateTitleRow').style.display || document.getElementById('lateTitleRow').style.display === 'none') {
+      document.getElementById('addLatePlanBtn').click();
+    }
+    document.getElementById('lateMinutes').value = wholeMin;
+    document.getElementById('lateSeconds').value = secs;
+    document.getElementById('lateIncludeToggle').checked = true;
+    calculate();
+  });
+
+  // ---- Copy / Paste ----
+  const logCopyBtn = document.getElementById('logCopyBtn');
+
+  logCopyBtn.addEventListener('click', () => {
+    if (logEntries.length === 0) {
+      logCopyBtn.textContent = 'Nothing to copy';
+      setTimeout(() => { logCopyBtn.textContent = '📋 Copy'; }, 1500);
+      return;
+    }
+    const lines = logEntries.map(entry => {
+      const parts = [];
+      if (entry.hh > 0) parts.push(`${entry.hh}h`);
+      parts.push(`${entry.mm}m`);
+      parts.push(`${entry.ss}s`);
+      return `${parts.join(' ')}, ${entry.target}`;
+    });
+    const text = lines.join('\n');
+
+    const showCopied = () => {
+      logCopyBtn.textContent = '✅ Copied';
+      logCopyBtn.classList.add('copied');
+      setTimeout(() => {
+        logCopyBtn.textContent = '📋 Copy';
+        logCopyBtn.classList.remove('copied');
+      }, 1500);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(showCopied).catch(() => {
+        logBulkArea.value = text;
+        logBulkOverlay.style.display = 'flex';
+      });
+    } else {
+      logBulkArea.value = text;
+      logBulkOverlay.style.display = 'flex';
+    }
+  });
+
+
+  // ---- Bulk Import (h/m/s notation) ----
+  const logBulkBtn = document.getElementById('logBulkBtn');
+  const logBulkOverlay = document.getElementById('logBulkOverlay');
+  const logBulkArea = document.getElementById('logBulkArea');
+  const logBulkImportBtn = document.getElementById('logBulkImportBtn');
+  const logBulkCloseBtn = document.getElementById('logBulkCloseBtn');
+  const logBulkFeedback = document.getElementById('logBulkFeedback');
+
+  function openBulkModal() {
+    logBulkOverlay.style.display = 'flex';
+    logBulkFeedback.textContent = '';
+    logBulkArea.focus();
+  }
+
+  function closeBulkModal() {
+    logBulkOverlay.style.display = 'none';
+    logBulkArea.value = '';
+    logBulkFeedback.textContent = '';
+  }
+
+  logBulkBtn.addEventListener('click', openBulkModal);
+  logBulkCloseBtn.addEventListener('click', closeBulkModal);
+  logBulkOverlay.addEventListener('click', (e) => {
+    if (e.target === logBulkOverlay) closeBulkModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && logBulkOverlay.style.display === 'flex') closeBulkModal();
+  });
+
+  function parseBulkLine(line) {
+    const clean = line.trim();
+    if (!clean) return null;
+    if (/day/i.test(clean) && /clocked/i.test(clean)) return null;
+
+    // Split off the target: the last comma/tab-separated token
+    const segments = clean.split(/\t|,/).map(s => s.trim()).filter(s => s !== '');
+    if (segments.length < 1) return null;
+
+    const durationPart = segments[0];
+    const hMatch = durationPart.match(/(\d+)\s*h/i);
+    const mMatch = durationPart.match(/(\d+)\s*m(?!s)/i);
+    const sMatch = durationPart.match(/(\d+)\s*s/i);
+
+    if (!hMatch && !mMatch && !sMatch) return null;
+
+    const hh = hMatch ? parseInt(hMatch[1], 10) : 0;
+    const mm = mMatch ? parseInt(mMatch[1], 10) : 0;
+    const ss = sMatch ? parseInt(sMatch[1], 10) : 0;
+
+    let target = 8;
+    if (segments.length > 1) {
+      const n = parseInt(segments[1], 10);
+      if (!isNaN(n)) target = n;
+    }
+
+    return { hh, mm, ss, target };
+  }
+
+  logBulkImportBtn.addEventListener('click', () => {
+    const rawLines = logBulkArea.value.split('\n');
+    let imported = 0;
+    let skipped = 0;
+
+    rawLines.forEach(line => {
+      const parsed = parseBulkLine(line);
+      if (parsed) {
+        logEntryCount++;
+        logEntries.push({ id: logEntryCount, hh: parsed.hh, mm: parsed.mm, ss: parsed.ss, target: parsed.target });
+        imported++;
+      } else if (line.trim() !== '') {
+        skipped++;
+      }
+    });
+
+    if (imported > 0) {
+      renderLogList();
+      calculateLog();
+      logBulkFeedback.className = 'log-paste-feedback success';
+      logBulkFeedback.textContent = `✅ Imported ${imported} entr${imported === 1 ? 'y' : 'ies'}${skipped ? `, skipped ${skipped} unrecognized line${skipped === 1 ? '' : 's'}` : ''}.`;
+      logBulkArea.value = '';
+    } else {
+      logBulkFeedback.className = 'log-paste-feedback error';
+      logBulkFeedback.textContent = '⚠️ No valid entries found. Use format: 8h 1m 36s, 8';
+    }
+  });
+
+
+  function updateCountdown() {
+    const countdownTime = document.getElementById('countdownTime');
+    const countdownSub = document.getElementById('countdownSub');
+    const elapsedOut = document.getElementById('elapsedOut');
+    const totalHoursOut = document.getElementById('totalHoursOut');
+    const resultCard = document.getElementById('resultCard');
+
+    if (!state.clockInDate || !state.clockOutDate) {
+      countdownTime.innerHTML = '--:--:--';
+      countdownSub.textContent = '📌 Set your clock-in time above to see this fill in';
+      countdownSub.classList.remove('done');
+      elapsedOut.textContent = '--:--:--';
+      totalHoursOut.textContent = '--';
+      resultCard.classList.remove('exceeded');
+      document.getElementById('progressFill').style.width = '0%';
+      document.getElementById('progressFill').classList.remove('complete');
+      document.getElementById('progressPct').textContent = '0%';
+      return;
+    }
+
+    const now = new Date();
+    const remainingSec = (state.clockOutDate - now) / 1000;
+    const elapsedSec = Math.max(0, (now - state.clockInDate) / 1000);
+
+    if (remainingSec <= 0) {
+      const over = secondsToHMS(-remainingSec);
+      countdownTime.innerHTML = `00:00:<span class="secs">00</span>`;
+      countdownSub.textContent = `✅ Shift complete. Clocked out ${over.str} ago`;
+      countdownSub.classList.add('done');
+      if (!resultCard.classList.contains('exceeded')) {
+        resultCard.classList.add('exceeded', 'flip-pulse');
+        setTimeout(() => resultCard.classList.remove('flip-pulse'), 500);
+      }
+      document.getElementById('mobileSticky').classList.add('exceeded');
+    } else {
+      const r = secondsToHMS(remainingSec);
+      countdownTime.innerHTML = `${pad(r.h)}:${pad(r.m)}:<span class="secs">${pad(r.s)}</span>`;
+      countdownSub.textContent = now < state.clockInDate
+        ? '⏸️ Awaiting clock-in'
+        : '🏃🏻 until clock-out';
+      countdownSub.classList.remove('done');
+      resultCard.classList.remove('exceeded');
+      document.getElementById('mobileSticky').classList.remove('exceeded');
+    }
+
+    const e = secondsToHMS(elapsedSec);
+    elapsedOut.textContent = e.str;
+
+    // Total worked hours = elapsed time minus break time already elapsed (capped at total break)
+    const elapsedMin = elapsedSec / 60;
+    const breakElapsed = Math.min(state.totalBreakMin, Math.max(0, elapsedMin));
+    const workedMin = Math.max(0, elapsedMin - breakElapsed);
+    const workedH = Math.floor(workedMin / 60);
+    const workedM = Math.floor(workedMin % 60);
+    const workedS = Math.floor((workedMin * 60) % 60);
+    totalHoursOut.textContent = `${pad(workedH)}:${pad(workedM)}:${pad(workedS)}`;
+
+    // Progress bar: elapsed vs total session duration (work + breaks)
+    const totalSessionSec = Math.max(1, (state.clockOutDate - state.clockInDate) / 1000);
+    const progressRatio = Math.min(1, elapsedSec / totalSessionSec);
+    const progressFill = document.getElementById('progressFill');
+    const progressPct = document.getElementById('progressPct');
+    progressFill.style.width = `${(progressRatio * 100).toFixed(1)}%`;
+    progressPct.textContent = `${Math.round(progressRatio * 100)}%`;
+    if (remainingSec <= 0) {
+      progressFill.classList.add('complete');
+    } else {
+      progressFill.classList.remove('complete');
+    }
+  }
+
+  document.getElementById('clockIn').addEventListener('input', calculate);
+  document.getElementById('targetHours').addEventListener('input', calculate);
+  document.getElementById('lateMinutes').addEventListener('input', calculate);
+  document.getElementById('lateSeconds').addEventListener('input', calculate);
+  document.getElementById('lateIncludeToggle').addEventListener('change', calculate);
+
+  const addLatePlanBtn = document.getElementById('addLatePlanBtn');
+  const latePlannerBody = document.getElementById('latePlannerBody');
+  const clearLateBtn = document.getElementById('clearLateBtn');
+  const lateTitleRow = document.getElementById('lateTitleRow');
+
+  addLatePlanBtn.addEventListener('click', () => {
+    addLatePlanBtn.style.display = 'none';
+    lateTitleRow.style.display = 'flex';
+    latePlannerBody.style.display = 'block';
+    latePlannerBody.classList.add('reveal');
+    state.lateSectionActive = true;
+    calculate();
+    document.getElementById('lateMinutes').focus();
+  });
+
+  clearLateBtn.addEventListener('click', () => {
+    document.getElementById('lateMinutes').value = '';
+    document.getElementById('lateSeconds').value = '';
+    document.getElementById('lateIncludeToggle').checked = false;
+    state.lateSectionActive = false;
+    calculate();
+    lateTitleRow.style.display = 'none';
+    latePlannerBody.style.display = 'none';
+    addLatePlanBtn.style.display = 'block';
+  });
+
+  function calculateEarlyPlan() {
+    const earlyResult = document.getElementById('earlyResult');
+    const earlyTime = document.getElementById('earlyTime').value;
+
+    earlyResult.classList.remove('short', 'ontrack');
+
+    if (!earlyTime) {
+      earlyResult.textContent = "Enter a time above to see the projected impact on your hours.";
+      state.earlyDepartureDate = null;
+      document.getElementById('earlyCountdownWrap').style.display = 'none';
+      updateEarlyCountdown();
+      return;
+    }
+    if (!state.clockInDate) {
+      earlyResult.textContent = "Please enter your clock-in time first.";
+      state.earlyDepartureDate = null;
+      document.getElementById('earlyCountdownWrap').style.display = 'none';
+      updateEarlyCountdown();
+      return;
+    }
+
+    const earlyMin = toMinutes(earlyTime);
+    const clockInMin = toMinutes(document.getElementById('clockIn').value);
+    let earlyTotalMin = earlyMin - clockInMin;
+    if (earlyTotalMin < 0) earlyTotalMin += 1440;
+
+    const actualWorkMin = Math.max(0, earlyTotalMin - state.totalBreakMin);
+    const targetMin = state.targetWorkMin;
+    const diffMin = actualWorkMin - targetMin;
+
+    if (diffMin < -0.5) {
+      earlyResult.classList.add('short');
+      earlyResult.innerHTML = `Departing at <b>${minutesToTimeStr(earlyMin)}</b> will leave you short by <b>${formatDuration(-diffMin)}</b> against your ${state.targetWorkMin / 60}h target. Total hours logged: <b>${formatDuration(actualWorkMin)}</b>.`;
+    } else if (diffMin > 0.5) {
+      earlyResult.classList.add('ontrack');
+      earlyResult.innerHTML = `Departing at <b>${minutesToTimeStr(earlyMin)}</b> exceeds your target by <b>${formatDuration(diffMin)}</b>. You're fully covered.`;
+    } else {
+      earlyResult.classList.add('ontrack');
+      earlyResult.innerHTML = `Departing at <b>${minutesToTimeStr(earlyMin)}</b> meets your ${state.targetWorkMin / 60}h target exactly.`;
+    }
+
+    // Anchor the planned departure time to the same calendar day as clock-in,
+    // rolling to the next day if the departure time is earlier than clock-in.
+    const departureDate = new Date(state.clockInDate.getTime());
+    departureDate.setHours(0, 0, 0, 0);
+    departureDate.setMinutes(earlyMin);
+    if (departureDate < state.clockInDate) {
+      departureDate.setDate(departureDate.getDate() + 1);
+    }
+    state.earlyDepartureDate = departureDate;
+    document.getElementById('earlyCountdownWrap').style.display = 'block';
+    updateEarlyCountdown();
+  }
+
+  function updateEarlyCountdown() {
+    const timeEl = document.getElementById('earlyCountdownTime');
+    const subEl = document.getElementById('earlyCountdownSub');
+
+    if (!state.earlyDepartureDate) {
+      timeEl.textContent = '--:--:--';
+      timeEl.classList.remove('passed');
+      subEl.textContent = 'Set a planned departure time above';
+      return;
+    }
+
+    const now = new Date();
+    const remainingSec = (state.earlyDepartureDate - now) / 1000;
+
+    if (remainingSec <= 0) {
+      const over = secondsToHMS(-remainingSec);
+      timeEl.textContent = '00:00:00';
+      timeEl.classList.add('passed');
+      subEl.textContent = `Planned departure time reached ${over.str} ago`;
+    } else {
+      const r = secondsToHMS(remainingSec);
+      timeEl.textContent = r.str;
+      timeEl.classList.remove('passed');
+      subEl.textContent = 'until planned departure';
+    }
+  }
+
+  document.getElementById('earlyTime').addEventListener('input', calculateEarlyPlan);
+
+  const addEarlyPlanBtn = document.getElementById('addEarlyPlanBtn');
+  const earlyPlannerBody = document.getElementById('earlyPlannerBody');
+  const clearEarlyBtn = document.getElementById('clearEarlyBtn');
+  const earlyTitleRow = document.getElementById('earlyTitleRow');
+
+  addEarlyPlanBtn.addEventListener('click', () => {
+    addEarlyPlanBtn.style.display = 'none';
+    earlyTitleRow.style.display = 'flex';
+    earlyPlannerBody.style.display = 'block';
+    earlyPlannerBody.classList.add('reveal');
+    document.getElementById('earlyTime').focus();
+  });
+
+  clearEarlyBtn.addEventListener('click', () => {
+    document.getElementById('earlyTime').value = '';
+    calculateEarlyPlan();
+    earlyTitleRow.style.display = 'none';
+    earlyPlannerBody.style.display = 'none';
+    addEarlyPlanBtn.style.display = 'block';
+  });
+
+  calculate();
+
+  const dateBanner = document.getElementById('dateBanner');
+  dateBanner.textContent = new Date().toLocaleDateString(undefined, {
+    weekday: 'short', month: 'short', day: 'numeric'
+  });
+
+  setInterval(() => {
+    updateCountdown();
+    updateEarlyCountdown();
+  }, 1000);
+
+</script>
+</body>
+</html>
