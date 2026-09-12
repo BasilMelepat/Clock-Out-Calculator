@@ -32,40 +32,6 @@
   .flip-pulse {
     animation: pulseFlip 0.5s ease;
   }
-  .mobile-sticky {
-    display: none;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: var(--deep);
-    color: #fff;
-    padding: 10px 16px;
-    border-radius: 12px;
-    margin-bottom: 14px;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: 0 6px 18px rgba(11,42,74,0.2);
-    transition: background 0.4s ease;
-  }
-  .mobile-sticky.exceeded {
-    background: var(--good);
-  }
-  .mobile-sticky .msl {
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 10.5px;
-    color: #C9DDEF;
-    font-weight: 700;
-  }
-  .mobile-sticky .mst {
-    font-size: 18px;
-    font-variant-numeric: tabular-nums;
-  }
-  @media (max-width: 780px) {
-    .mobile-sticky { display: flex; }
-  }
   .log-input-card {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -75,6 +41,10 @@
     border-radius: 14px;
     padding: 16px;
     margin-bottom: 14px;
+  }
+  .log-input-card.two-col {
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 0;
   }
   .log-input-box label {
     display: block;
@@ -222,6 +192,7 @@
     background: linear-gradient(160deg, var(--sky-light) 0%, #FFFFFF 55%);
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 28px 24px;
@@ -245,7 +216,8 @@
     .wrap { grid-template-columns: 1fr; gap: 14px; }
     .col3 { grid-column: auto; }
     .card { padding: 16px; }
-    .log-input-card { grid-template-columns: 1fr; padding: 12px; }
+    .log-input-card,
+    .log-input-card.two-col { grid-template-columns: 1fr; padding: 12px; }
     .log-add-btn { padding: 12px; }
     .log-list-header,
     .log-row {
@@ -359,26 +331,23 @@
   .result {
     background: linear-gradient(135deg, var(--deep) 0%, var(--deep2) 100%);
     color: #fff;
-    border-radius: 16px;
-    padding: 24px;
-    text-align: center;
+    border: none;
     box-shadow: 0 10px 30px rgba(11,42,74,0.25);
-    transition: background 0.5s ease;
+    transition: background 0.5s ease, box-shadow 0.5s ease;
+  }
+  .result .card-title {
+    color: var(--sky);
   }
   .result.exceeded {
     background: linear-gradient(135deg, #1E8E5A 0%, #17A860 100%);
     box-shadow: 0 10px 30px rgba(30,142,90,0.3);
   }
-  .result.exceeded .label { color: #D9F7E8; }
+  .result.exceeded .card-title { color: #D9F7E8; }
   .result.exceeded .detail { color: #D9F7E8; }
-  .result.exceeded .breakdown { color: #D9F7E8; border-top-color: rgba(255,255,255,0.25); }
-  .result .label {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--sky);
-    font-weight: 700;
-    margin-bottom: 8px;
+  .result.exceeded .breakdown { color: #D9F7E8; border-top-color: rgba(255,255,255,0.15); }
+  .result-body {
+    text-align: center;
+    margin-top: 6px;
   }
   .result .time {
     font-size: 44px;
@@ -408,20 +377,9 @@
     font-weight: 600;
     padding: 8px;
   }
-  .countdown-card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 20px;
+  .countdown-body {
     text-align: center;
-  }
-  .countdown-label {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--sky);
-    font-weight: 700;
-    margin-bottom: 10px;
+    margin-top: 6px;
   }
   .countdown-time {
     font-size: 38px;
@@ -784,6 +742,15 @@
   .toggle-switch input:checked + .toggle-slider::before {
     transform: translateX(18px);
   }
+  .app-footer {
+    width: 100%;
+    max-width: 1360px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 24px;
+    padding-bottom: 4px;
+  }
 </style>
 </head>
 <body>
@@ -836,14 +803,14 @@
         <span>📋 Shift Details</span>
         <span class="date-banner" id="dateBanner"></span>
       </div>
-      <div class="row">
-        <div>
+      <div class="log-input-card two-col">
+        <div class="log-input-box">
           <label for="clockIn">🕘 Clock-in Time</label>
-          <input type="time" id="clockIn" value="09:30">
+          <input type="time" id="clockIn" value="09:30" class="log-duration-input">
         </div>
-        <div>
+        <div class="log-input-box">
           <label for="targetHours">🎯 Target Working Hours</label>
-          <input type="number" id="targetHours" value="8" min="0" step="0.25">
+          <input type="number" id="targetHours" value="8" min="0" step="0.25" class="log-target-input">
         </div>
       </div>
     </div>
@@ -887,10 +854,14 @@
   </div>
 
   <div class="col">
-    <div class="countdown-card">
-      <div class="countdown-label">⏳ Time Remaining</div>
-      <div class="countdown-time" id="countdownTime">--:--:--</div>
-      <div class="countdown-sub" id="countdownSub">📌 Set your clock-in time above to see this fill in</div>
+    <div class="card countdown-card">
+      <div class="card-title">
+        <span>⏳ Time Remaining</span>
+      </div>
+      <div class="countdown-body">
+        <div class="countdown-time" id="countdownTime">--:--:--</div>
+        <div class="countdown-sub" id="countdownSub">📌 Set your clock-in time above to see this fill in</div>
+      </div>
       <div class="worked-row">
         <span>⏱️ Elapsed Time: <b id="elapsedOut">--:--:--</b></span>
         <span>✅ Hours Worked: <b id="totalHoursOut">--</b></span>
@@ -906,10 +877,14 @@
       </div>
     </div>
 
-    <div class="result" id="resultCard">
-      <div class="label">🏁 Clock-Out Time</div>
-      <div class="time" id="clockOutTime">--:--</div>
-      <div class="detail" id="resultDetail"></div>
+    <div class="card result" id="resultCard">
+      <div class="card-title">
+        <span>🏁 Clock-Out Time</span>
+      </div>
+      <div class="result-body">
+        <div class="time" id="clockOutTime">--:--</div>
+        <div class="detail" id="resultDetail"></div>
+      </div>
       <div class="breakdown">
         <span>💼 Hours Worked: <b id="workHoursOut">--</b></span>
         <span>☕ Break Time: <b id="breakHoursOut">--</b></span>
@@ -939,6 +914,8 @@
     </div>
   </div>
 </div>
+
+<div class="app-footer">© 2026 Basil Melepat · Designed for you</div>
 
 <div class="modal-overlay" id="logBulkOverlay" style="display:none;">
   <div class="modal-box">
@@ -1107,8 +1084,6 @@
       updateCountdown();
       calculateEarlyPlan();
       updateLateMotivation(rawBacklogMin, includeLate, targetHours, null);
-      document.getElementById('mobileStickyTime').textContent = '--:--';
-      document.getElementById('mobileSticky').classList.remove('exceeded');
       return;
     }
 
@@ -1131,7 +1106,6 @@
     const clockOutMin = clockInMin + targetWorkMin + totalBreakMin;
 
     timeEl.textContent = minutesToTimeStr(clockOutMin);
-    document.getElementById('mobileStickyTime').textContent = minutesToTimeStr(clockOutMin);
     errorEl.textContent = `🕘 Clocked in at ${minutesToTimeStr(clockInMin)}`;
     workOut.textContent = formatDuration(targetWorkMin);
     breakOut.textContent = totalBreakMin > 0 ? formatDuration(totalBreakMin) : 'No breaks taken';
@@ -1299,7 +1273,7 @@
     logEditingId = id;
     logDuration.value = `${entry.hh}h ${entry.mm}m ${entry.ss}s`;
     logTarget.value = pad(entry.target);
-    addLogEntryBtn.textContent = '✓ Update';
+    addLogEntryBtn.textContent = 'Update';
     addLogEntryBtn.classList.add('editing');
     logDuration.focus();
   }
@@ -1337,6 +1311,19 @@
     calculateLog();
   });
 
+  function getDailyLogBacklogMin() {
+    if (logEntries.length === 0) return 0;
+    let totalDiffSeconds = 0;
+    logEntries.forEach(entry => {
+      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
+      const targetSeconds = entry.target * 3600;
+      totalDiffSeconds += (clockedSeconds - targetSeconds);
+    });
+    return Math.max(0, -totalDiffSeconds / 60);
+  }
+
+  let logSyncMode = null;
+
   function calculateLog() {
     const summary = document.getElementById('logSummary');
     summary.classList.remove('short', 'clear');
@@ -1345,6 +1332,8 @@
       summary.classList.add('clear');
       summary.textContent = 'Log your daily hours to track your running-late balance automatically.';
       syncLogBtn.disabled = true;
+      syncLogBtn.textContent = '⇄ Sync to Running Late Balance';
+      logSyncMode = null;
       return;
     }
 
@@ -1363,14 +1352,20 @@
       summary.classList.add('short');
       summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're running a total backlog of <b>${formatMinSec(backlogMin)}</b>.`;
       syncLogBtn.disabled = false;
+      syncLogBtn.textContent = '⇄ Sync to Running Late Balance';
+      logSyncMode = 'backlog';
     } else if (aheadMin > 0.5) {
       summary.classList.add('clear');
-      summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${formatMinSec(aheadMin)}</b>. No backlog.`;
-      syncLogBtn.disabled = true;
+      summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${formatMinSec(aheadMin)}</b>. No backlog, nice work! You've earned an early departure today.`;
+      syncLogBtn.disabled = false;
+      syncLogBtn.textContent = `🌇 Plan an Early Departure (${formatMinSec(aheadMin)})`;
+      logSyncMode = 'ahead';
     } else {
       summary.classList.add('clear');
       summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're exactly on target. No backlog.`;
       syncLogBtn.disabled = true;
+      syncLogBtn.textContent = '⇄ Sync to Running Late Balance';
+      logSyncMode = null;
     }
   }
 
@@ -1381,17 +1376,37 @@
       const targetSeconds = entry.target * 3600;
       totalDiffSeconds += (clockedSeconds - targetSeconds);
     });
-    const backlogMin = Math.max(0, -totalDiffSeconds / 60);
-    const wholeMin = Math.floor(backlogMin);
-    const secs = Math.round((backlogMin - wholeMin) * 60);
 
-    if (!document.getElementById('lateTitleRow').style.display || document.getElementById('lateTitleRow').style.display === 'none') {
-      document.getElementById('addLatePlanBtn').click();
+    if (logSyncMode === 'backlog') {
+      const backlogMin = Math.max(0, -totalDiffSeconds / 60);
+      const wholeMin = Math.floor(backlogMin);
+      const secs = Math.round((backlogMin - wholeMin) * 60);
+
+      if (!document.getElementById('lateTitleRow').style.display || document.getElementById('lateTitleRow').style.display === 'none') {
+        document.getElementById('addLatePlanBtn').click();
+      }
+      document.getElementById('lateMinutes').value = wholeMin;
+      document.getElementById('lateSeconds').value = secs;
+      document.getElementById('lateIncludeToggle').checked = true;
+      calculate();
+    } else if (logSyncMode === 'ahead') {
+      const aheadMin = Math.max(0, totalDiffSeconds / 60);
+
+      if (!state.clockOutDate) {
+        calculate(); // ensure today's clock-out time is computed first
+      }
+      if (!state.clockOutDate) return;
+
+      const suggestedDate = new Date(state.clockOutDate.getTime());
+      suggestedDate.setMinutes(suggestedDate.getMinutes() - aheadMin);
+      const suggestedTime = `${pad(suggestedDate.getHours())}:${pad(suggestedDate.getMinutes())}`;
+
+      if (earlyTitleRow.style.display === 'none' || !earlyTitleRow.style.display) {
+        addEarlyPlanBtn.click();
+      }
+      document.getElementById('earlyTime').value = suggestedTime;
+      calculateEarlyPlan();
     }
-    document.getElementById('lateMinutes').value = wholeMin;
-    document.getElementById('lateSeconds').value = secs;
-    document.getElementById('lateIncludeToggle').checked = true;
-    calculate();
   });
 
   // ---- Copy / Paste ----
@@ -1510,9 +1525,7 @@
     if (imported > 0) {
       renderLogList();
       calculateLog();
-      logBulkFeedback.className = 'log-paste-feedback success';
-      logBulkFeedback.textContent = `✅ Imported ${imported} entr${imported === 1 ? 'y' : 'ies'}${skipped ? `, skipped ${skipped} unrecognized line${skipped === 1 ? '' : 's'}` : ''}.`;
-      logBulkArea.value = '';
+      closeBulkModal();
     } else {
       logBulkFeedback.className = 'log-paste-feedback error';
       logBulkFeedback.textContent = '⚠️ No valid entries found. Use format: 8h 1m 36s, 8';
@@ -1553,7 +1566,6 @@
         resultCard.classList.add('exceeded', 'flip-pulse');
         setTimeout(() => resultCard.classList.remove('flip-pulse'), 500);
       }
-      document.getElementById('mobileSticky').classList.add('exceeded');
     } else {
       const r = secondsToHMS(remainingSec);
       countdownTime.innerHTML = `${pad(r.h)}:${pad(r.m)}:<span class="secs">${pad(r.s)}</span>`;
@@ -1562,7 +1574,6 @@
         : '🏃🏻 until clock-out';
       countdownSub.classList.remove('done');
       resultCard.classList.remove('exceeded');
-      document.getElementById('mobileSticky').classList.remove('exceeded');
     }
 
     const e = secondsToHMS(elapsedSec);
@@ -1650,18 +1661,27 @@
     if (earlyTotalMin < 0) earlyTotalMin += 1440;
 
     const actualWorkMin = Math.max(0, earlyTotalMin - state.totalBreakMin);
-    const targetMin = state.targetWorkMin;
+    const dailyLogBacklogMin = getDailyLogBacklogMin();
+    const targetMin = state.targetWorkMin + dailyLogBacklogMin;
     const diffMin = actualWorkMin - targetMin;
+    const targetDisplay = formatDuration(targetMin);
+    const hasBacklog = dailyLogBacklogMin > 0.5;
+    const backlogNote = hasBacklog ? ' (includes your Daily Work Log backlog)' : '';
 
     if (diffMin < -0.5) {
       earlyResult.classList.add('short');
-      earlyResult.innerHTML = `Departing at <b>${minutesToTimeStr(earlyMin)}</b> will leave you short by <b>${formatDuration(-diffMin)}</b> against your ${state.targetWorkMin / 60}h target. Total hours logged: <b>${formatDuration(actualWorkMin)}</b>.`;
+      const noBacklogNote = hasBacklog ? '' : ` No backlog carried over, this is purely against your <b>${targetDisplay}</b> daily target.`;
+      earlyResult.innerHTML = `Departing at <b>${minutesToTimeStr(earlyMin)}</b> will leave you short by <b>${formatDuration(-diffMin)}</b> against your <b>${targetDisplay}</b> target${backlogNote}. Total hours logged: <b>${formatDuration(actualWorkMin)}</b>.${noBacklogNote}`;
     } else if (diffMin > 0.5) {
       earlyResult.classList.add('ontrack');
-      earlyResult.innerHTML = `Departing at <b>${minutesToTimeStr(earlyMin)}</b> exceeds your target by <b>${formatDuration(diffMin)}</b>. You're fully covered.`;
+      earlyResult.innerHTML = hasBacklog
+        ? `Departing at <b>${minutesToTimeStr(earlyMin)}</b> exceeds your <b>${targetDisplay}</b> target by <b>${formatDuration(diffMin)}</b>${backlogNote}. You're fully covered.`
+        : `✅ No backlog today. Departing at <b>${minutesToTimeStr(earlyMin)}</b> still exceeds your <b>${targetDisplay}</b> daily target by <b>${formatDuration(diffMin)}</b>. You're fully covered.`;
     } else {
       earlyResult.classList.add('ontrack');
-      earlyResult.innerHTML = `Departing at <b>${minutesToTimeStr(earlyMin)}</b> meets your ${state.targetWorkMin / 60}h target exactly.`;
+      earlyResult.innerHTML = hasBacklog
+        ? `Departing at <b>${minutesToTimeStr(earlyMin)}</b> meets your <b>${targetDisplay}</b> target exactly${backlogNote}.`
+        : `✅ No backlog today. Departing at <b>${minutesToTimeStr(earlyMin)}</b> meets your <b>${targetDisplay}</b> daily target exactly.`;
     }
 
     // Anchor the planned departure time to the same calendar day as clock-in,
