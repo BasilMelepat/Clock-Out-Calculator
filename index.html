@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Time & Attendance Tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏰</text></svg>">
 <style>
   :root {
     --deep: #0B2A4A;
@@ -97,22 +98,20 @@
     gap: 6px;
     padding: 0 6px;
     margin-bottom: 8px;
-    font-size: 11.5px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
   }
   .log-row {
     display: grid;
     grid-template-columns: 28px 1fr 72px 82px 44px;
     gap: 6px;
     align-items: center;
-    border: 1px solid var(--line);
+    border: 1px solid #E9F1F8;
     border-radius: 12px;
     padding: 10px 8px;
     margin-bottom: 8px;
-    background: var(--sky-light);
+    background: #fff;
   }
   .log-row .log-day {
     font-weight: 700;
@@ -185,6 +184,11 @@
     opacity: 0.5;
     cursor: default;
   }
+  .sync-btn.early-sync-btn {
+    border-color: var(--good);
+    color: var(--good);
+  }
+  .sync-btn.early-sync-btn:hover { background: #E4F8ED; }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -328,19 +332,60 @@
     transition: background .15s;
   }
   .add-btn:hover { background: var(--sky-light); }
+  @keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes successGlow {
+    0%, 100% { box-shadow: 0 10px 30px rgba(30,142,90,0.3); }
+    50% { box-shadow: 0 10px 44px rgba(30,142,90,0.55); }
+  }
+  @keyframes shimmerSweep {
+    0% { transform: translateX(-120%) skewX(-15deg); }
+    100% { transform: translateX(220%) skewX(-15deg); }
+  }
   .result {
-    background: linear-gradient(135deg, var(--deep) 0%, var(--deep2) 100%);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(120deg, var(--deep) 0%, var(--deep2) 45%, var(--deep) 100%);
+    background-size: 220% 220%;
+    animation: gradientFlow 10s ease infinite;
     color: #fff;
     border: none;
     box-shadow: 0 10px 30px rgba(11,42,74,0.25);
     transition: background 0.5s ease, box-shadow 0.5s ease;
   }
+  .result::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    animation: shimmerSweep 5s ease-in-out infinite;
+    pointer-events: none;
+  }
   .result .card-title {
     color: var(--sky);
+    position: relative;
   }
   .result.exceeded {
-    background: linear-gradient(135deg, #1E8E5A 0%, #17A860 100%);
-    box-shadow: 0 10px 30px rgba(30,142,90,0.3);
+    background: linear-gradient(120deg, #1E8E5A 0%, #17A860 45%, #1E8E5A 100%);
+    background-size: 220% 220%;
+    animation: gradientFlow 10s ease infinite, successGlow 2.6s ease-in-out infinite;
+  }
+  .result.exceeded.flip-pulse {
+    animation: gradientFlow 10s ease infinite, successGlow 2.6s ease-in-out infinite, pulseFlip 0.5s ease;
+  }
+  .result.exceeded::before {
+    display: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .result, .result.exceeded, .result::before, .result.exceeded::before {
+      animation: none;
+    }
   }
   .result.exceeded .card-title { color: #D9F7E8; }
   .result.exceeded .detail { color: #D9F7E8; }
@@ -348,6 +393,35 @@
   .result-body {
     text-align: center;
     margin-top: 6px;
+    position: relative;
+  }
+  .result .breakdown {
+    position: relative;
+  }
+  .particles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .particles span {
+    position: absolute;
+    bottom: -12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.55);
+    opacity: 0;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(0.8); opacity: 0; }
+    12% { opacity: 0.8; }
+    85% { opacity: 0.3; }
+    100% { transform: translateY(-160px) scale(1); opacity: 0; }
+  }
+  .result.exceeded .particles span {
+    animation: floatUp linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .result.exceeded .particles span { animation: none; }
   }
   .result .time {
     font-size: 44px;
@@ -381,12 +455,29 @@
     text-align: center;
     margin-top: 6px;
   }
+  @keyframes digitFlip {
+    0% { transform: rotateX(90deg); opacity: 0.3; }
+    60% { transform: rotateX(-14deg); opacity: 1; }
+    100% { transform: rotateX(0deg); opacity: 1; }
+  }
+  .flip-char {
+    display: inline-block;
+    transform-origin: center 55%;
+    backface-visibility: hidden;
+  }
+  .flip-char.flip-anim {
+    animation: digitFlip 0.35s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .flip-char.flip-anim { animation: none; }
+  }
   .countdown-time {
     font-size: 38px;
     font-weight: 800;
     color: var(--deep);
     font-variant-numeric: tabular-nums;
     letter-spacing: 1px;
+    perspective: 240px;
   }
   .countdown-time .secs {
     color: var(--sky);
@@ -412,6 +503,7 @@
   .worked-row b {
     color: var(--deep);
     font-variant-numeric: tabular-nums;
+    perspective: 160px;
   }
   .progress-wrap {
     margin-top: 16px;
@@ -646,6 +738,39 @@
     transition: background .15s;
   }
   .modal-import-btn:hover { background: var(--deep2); }
+  .modal-upload-btn {
+    width: 100%;
+    padding: 11px;
+    border-radius: 12px;
+    border: 1.5px dashed var(--sky);
+    background: var(--sky-light);
+    color: var(--deep2);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s;
+    margin-bottom: 12px;
+  }
+  .modal-upload-btn:hover { background: #DCEEFB; }
+  .modal-upload-btn.loaded {
+    border-style: solid;
+    border-color: var(--good);
+    background: #E4F8ED;
+    color: var(--good);
+  }
+  .modal-employee-select {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    background: #FCFEFF;
+    margin-bottom: 12px;
+    outline: none;
+  }
+  .modal-employee-select:focus { border-color: var(--sky); }
   .mini-countdown-label {
     font-size: 11px;
     text-transform: uppercase;
@@ -663,6 +788,7 @@
     text-align: center;
     letter-spacing: 0.5px;
     margin: 4px 0 2px;
+    perspective: 180px;
   }
   .mini-countdown-time.passed {
     color: var(--good);
@@ -784,15 +910,16 @@
         <div class="log-list-header">
           <span>Day</span>
           <span>Clocked</span>
-          <span>Target Hour</span>
-          <span>Difference</span>
+          <span>Target</span>
+          <span>Log</span>
           <span></span>
         </div>
         <div id="logEntriesContainer"></div>
       </div>
 
       <div class="log-summary clear" id="logSummary">Log your daily hours to track your running-late balance automatically.</div>
-      <button class="sync-btn" id="syncLogBtn" type="button" disabled>⇄ Sync to Running Late Balance</button>
+      <button class="sync-btn" id="syncLogBtn" type="button" style="display:none;">🔄️ Sync to Running Late Balance</button>
+      <button class="sync-btn early-sync-btn" id="syncEarlyLogBtn" type="button" style="display:none;">🌇 Plan an Early Departure</button>
       </div>
     </div>
   </div>
@@ -878,6 +1005,16 @@
     </div>
 
     <div class="card result" id="resultCard">
+      <div class="particles" aria-hidden="true">
+        <span style="left:8%; width:5px; height:5px; animation-delay:0s; animation-duration:4.5s;"></span>
+        <span style="left:20%; width:3px; height:3px; animation-delay:0.8s; animation-duration:5.2s;"></span>
+        <span style="left:34%; width:4px; height:4px; animation-delay:1.6s; animation-duration:4s;"></span>
+        <span style="left:48%; width:6px; height:6px; animation-delay:0.4s; animation-duration:5.8s;"></span>
+        <span style="left:60%; width:3px; height:3px; animation-delay:2.2s; animation-duration:4.6s;"></span>
+        <span style="left:72%; width:5px; height:5px; animation-delay:1.2s; animation-duration:5s;"></span>
+        <span style="left:84%; width:4px; height:4px; animation-delay:2.8s; animation-duration:4.3s;"></span>
+        <span style="left:92%; width:3px; height:3px; animation-delay:0.2s; animation-duration:5.5s;"></span>
+      </div>
       <div class="card-title">
         <span>🏁 Clock-Out Time</span>
       </div>
@@ -920,16 +1057,20 @@
 <div class="modal-overlay" id="logBulkOverlay" style="display:none;">
   <div class="modal-box">
     <div class="modal-header">
-      <span>Work Log Bulk Import</span>
+      <span>⌛ Work Log Bulk Import</span>
       <button class="modal-close" id="logBulkCloseBtn" type="button" aria-label="Close">✕</button>
     </div>
-    <textarea id="logBulkArea" class="modal-textarea" placeholder="8h 1m 36s, 8&#10;8h 0m 7s, 8&#10;7h 59m 4s, 8"></textarea>
+    <button id="logBulkUploadBtn" class="modal-upload-btn" type="button">📎 Upload Attendance Excel (.xlsx)</button>
+    <input type="file" id="logBulkFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
+    <select id="logBulkEmployeeSelect" class="modal-employee-select" style="display:none;"></select>
+    <textarea id="logBulkArea" class="modal-textarea" placeholder="00h 00m 00s, 08&#10;00h 00m 00s, 08&#10;00h 00m 00s, 08"></textarea>
     <div class="modal-hint">One entry per line: <b>Xh Ym Zs, Target</b> (comma or tab separated). Any part (h/m/s) can be omitted.</div>
     <div class="log-paste-feedback" id="logBulkFeedback"></div>
     <button id="logBulkImportBtn" class="modal-import-btn" type="button">Import</button>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
   const breaksContainer = document.getElementById('breaksContainer');
   const addBreakBtn = document.getElementById('addBreakBtn');
@@ -1043,6 +1184,34 @@
   }
 
   function pad(n) { return String(n).padStart(2, '0'); }
+
+  function renderFlipTime(el, text, opts) {
+    opts = opts || {};
+    const chars = text.split('');
+
+    if (!el._flipSpans || el._flipSpans.length !== chars.length) {
+      el.innerHTML = '';
+      el._flipSpans = chars.map((c, i) => {
+        const span = document.createElement('span');
+        span.className = 'flip-char';
+        if (opts.secsFrom !== undefined && i >= opts.secsFrom) span.classList.add('secs');
+        span.textContent = c;
+        el.appendChild(span);
+        return span;
+      });
+      return;
+    }
+
+    chars.forEach((c, i) => {
+      const span = el._flipSpans[i];
+      if (span.textContent !== c) {
+        span.textContent = c;
+        span.classList.remove('flip-anim');
+        void span.offsetWidth;
+        span.classList.add('flip-anim');
+      }
+    });
+  }
 
   function secondsToHMS(totalSeconds) {
     totalSeconds = Math.max(0, Math.round(totalSeconds));
@@ -1178,6 +1347,7 @@
   const logListWrap = document.getElementById('logListWrap');
   const addLogEntryBtn = document.getElementById('addLogEntryBtn');
   const syncLogBtn = document.getElementById('syncLogBtn');
+  const syncEarlyLogBtn = document.getElementById('syncEarlyLogBtn');
   const logDuration = document.getElementById('logDuration');
   const logTarget = document.getElementById('logTarget');
   let logEntryCount = 0;
@@ -1247,7 +1417,7 @@
         <span class="log-target">${pad(entry.target)}</span>
         <span class="log-diff ${diffClass}">${formatDiffMinSec(diffSeconds)}</span>
         <span class="log-row-icons">
-          <button class="log-icon-btn" data-edit="${entry.id}" aria-label="Edit this entry">⏱️</button>
+          <button class="log-icon-btn" data-edit="${entry.id}" aria-label="Edit this entry">✍🏻</button>
           <button class="log-icon-btn" data-remove="${entry.id}" aria-label="Delete this entry">❌</button>
         </span>
       `;
@@ -1322,6 +1492,17 @@
     return Math.max(0, -totalDiffSeconds / 60);
   }
 
+  function getDailyLogAheadMin() {
+    if (logEntries.length === 0) return 0;
+    let totalDiffSeconds = 0;
+    logEntries.forEach(entry => {
+      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
+      const targetSeconds = entry.target * 3600;
+      totalDiffSeconds += (clockedSeconds - targetSeconds);
+    });
+    return Math.max(0, totalDiffSeconds / 60);
+  }
+
   let logSyncMode = null;
 
   function calculateLog() {
@@ -1331,8 +1512,8 @@
     if (logEntries.length === 0) {
       summary.classList.add('clear');
       summary.textContent = 'Log your daily hours to track your running-late balance automatically.';
-      syncLogBtn.disabled = true;
-      syncLogBtn.textContent = '⇄ Sync to Running Late Balance';
+      syncLogBtn.style.display = 'none';
+      syncEarlyLogBtn.style.display = 'none';
       logSyncMode = null;
       return;
     }
@@ -1351,25 +1532,29 @@
     if (backlogMin > 0.5) {
       summary.classList.add('short');
       summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're running a total backlog of <b>${formatMinSec(backlogMin)}</b>.`;
-      syncLogBtn.disabled = false;
-      syncLogBtn.textContent = '⇄ Sync to Running Late Balance';
+      syncLogBtn.style.display = 'block';
+      syncLogBtn.textContent = '🔄️ Sync to Running Late Balance';
+      syncEarlyLogBtn.style.display = 'none';
       logSyncMode = 'backlog';
     } else if (aheadMin > 0.5) {
       summary.classList.add('clear');
       summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${formatMinSec(aheadMin)}</b>. No backlog, nice work! You've earned an early departure today.`;
-      syncLogBtn.disabled = false;
-      syncLogBtn.textContent = `🌇 Plan an Early Departure (${formatMinSec(aheadMin)})`;
+      syncLogBtn.style.display = 'none';
+      syncEarlyLogBtn.style.display = 'block';
+      syncEarlyLogBtn.textContent = `🌇 Plan an Early Departure (${formatMinSec(aheadMin)})`;
       logSyncMode = 'ahead';
     } else {
       summary.classList.add('clear');
       summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're exactly on target. No backlog.`;
-      syncLogBtn.disabled = true;
-      syncLogBtn.textContent = '⇄ Sync to Running Late Balance';
+      syncLogBtn.style.display = 'none';
+      syncEarlyLogBtn.style.display = 'none';
       logSyncMode = null;
     }
   }
 
   syncLogBtn.addEventListener('click', () => {
+    if (logSyncMode !== 'backlog') return;
+
     let totalDiffSeconds = 0;
     logEntries.forEach(entry => {
       const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
@@ -1377,36 +1562,44 @@
       totalDiffSeconds += (clockedSeconds - targetSeconds);
     });
 
-    if (logSyncMode === 'backlog') {
-      const backlogMin = Math.max(0, -totalDiffSeconds / 60);
-      const wholeMin = Math.floor(backlogMin);
-      const secs = Math.round((backlogMin - wholeMin) * 60);
+    const backlogMin = Math.max(0, -totalDiffSeconds / 60);
+    const wholeMin = Math.floor(backlogMin);
+    const secs = Math.round((backlogMin - wholeMin) * 60);
 
-      if (!document.getElementById('lateTitleRow').style.display || document.getElementById('lateTitleRow').style.display === 'none') {
-        document.getElementById('addLatePlanBtn').click();
-      }
-      document.getElementById('lateMinutes').value = wholeMin;
-      document.getElementById('lateSeconds').value = secs;
-      document.getElementById('lateIncludeToggle').checked = true;
-      calculate();
-    } else if (logSyncMode === 'ahead') {
-      const aheadMin = Math.max(0, totalDiffSeconds / 60);
-
-      if (!state.clockOutDate) {
-        calculate(); // ensure today's clock-out time is computed first
-      }
-      if (!state.clockOutDate) return;
-
-      const suggestedDate = new Date(state.clockOutDate.getTime());
-      suggestedDate.setMinutes(suggestedDate.getMinutes() - aheadMin);
-      const suggestedTime = `${pad(suggestedDate.getHours())}:${pad(suggestedDate.getMinutes())}`;
-
-      if (earlyTitleRow.style.display === 'none' || !earlyTitleRow.style.display) {
-        addEarlyPlanBtn.click();
-      }
-      document.getElementById('earlyTime').value = suggestedTime;
-      calculateEarlyPlan();
+    if (!document.getElementById('lateTitleRow').style.display || document.getElementById('lateTitleRow').style.display === 'none') {
+      document.getElementById('addLatePlanBtn').click();
     }
+    document.getElementById('lateMinutes').value = wholeMin;
+    document.getElementById('lateSeconds').value = secs;
+    document.getElementById('lateIncludeToggle').checked = true;
+    calculate();
+  });
+
+  syncEarlyLogBtn.addEventListener('click', () => {
+    if (logSyncMode !== 'ahead') return;
+
+    let totalDiffSeconds = 0;
+    logEntries.forEach(entry => {
+      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
+      const targetSeconds = entry.target * 3600;
+      totalDiffSeconds += (clockedSeconds - targetSeconds);
+    });
+    const aheadMin = Math.max(0, totalDiffSeconds / 60);
+
+    if (!state.clockOutDate) {
+      calculate();
+    }
+    if (!state.clockOutDate) return;
+
+    const suggestedDate = new Date(state.clockOutDate.getTime());
+    suggestedDate.setMinutes(suggestedDate.getMinutes() - aheadMin);
+    const suggestedTime = `${pad(suggestedDate.getHours())}:${pad(suggestedDate.getMinutes())}`;
+
+    if (!earlyTitleRow.style.display || earlyTitleRow.style.display === 'none') {
+      addEarlyPlanBtn.click();
+    }
+    document.getElementById('earlyTime').value = suggestedTime;
+    calculateEarlyPlan();
   });
 
   // ---- Copy / Paste ----
@@ -1455,6 +1648,10 @@
   const logBulkImportBtn = document.getElementById('logBulkImportBtn');
   const logBulkCloseBtn = document.getElementById('logBulkCloseBtn');
   const logBulkFeedback = document.getElementById('logBulkFeedback');
+  const logBulkUploadBtn = document.getElementById('logBulkUploadBtn');
+  const logBulkFileInput = document.getElementById('logBulkFileInput');
+  const logBulkEmployeeSelect = document.getElementById('logBulkEmployeeSelect');
+  let uploadedSheetRows = null; // { header: [...], rows: [[name, ...cells], ...] }
 
   function openBulkModal() {
     logBulkOverlay.style.display = 'flex';
@@ -1466,6 +1663,12 @@
     logBulkOverlay.style.display = 'none';
     logBulkArea.value = '';
     logBulkFeedback.textContent = '';
+    logBulkUploadBtn.textContent = '📎 Upload Attendance Excel (.xlsx)';
+    logBulkUploadBtn.classList.remove('loaded');
+    logBulkEmployeeSelect.style.display = 'none';
+    logBulkEmployeeSelect.innerHTML = '';
+    logBulkFileInput.value = '';
+    uploadedSheetRows = null;
   }
 
   logBulkBtn.addEventListener('click', openBulkModal);
@@ -1476,6 +1679,100 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && logBulkOverlay.style.display === 'flex') closeBulkModal();
   });
+
+  // ---- Excel upload parsing ----
+  logBulkUploadBtn.addEventListener('click', () => logBulkFileInput.click());
+
+  logBulkFileInput.addEventListener('change', () => {
+    const file = logBulkFileInput.files[0];
+    if (!file) return;
+
+    if (typeof XLSX === 'undefined') {
+      logBulkFeedback.className = 'log-paste-feedback error';
+      logBulkFeedback.textContent = '⚠️ Excel reader failed to load. Check your internet connection and try again.';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const grid = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+
+        if (!grid.length || grid.length < 2) {
+          throw new Error('empty');
+        }
+
+        const header = grid[0];
+        const dataRows = grid.slice(1).filter(row => row[0] && String(row[0]).trim() !== '');
+
+        if (!dataRows.length) {
+          throw new Error('no-rows');
+        }
+
+        uploadedSheetRows = { header, rows: dataRows };
+
+        logBulkUploadBtn.textContent = `✅ ${file.name}`;
+        logBulkUploadBtn.classList.add('loaded');
+
+        if (dataRows.length > 1) {
+          logBulkEmployeeSelect.innerHTML = dataRows
+            .map((row, i) => `<option value="${i}">${String(row[0])}</option>`)
+            .join('');
+          logBulkEmployeeSelect.style.display = 'block';
+        } else {
+          logBulkEmployeeSelect.style.display = 'none';
+        }
+
+        loadEmployeeRowIntoTextarea(0);
+      } catch (err) {
+        logBulkFeedback.className = 'log-paste-feedback error';
+        logBulkFeedback.textContent = '⚠️ Could not read that file. Make sure it\'s an attendance sheet with dates as columns.';
+        logBulkUploadBtn.textContent = '📎 Upload Attendance Excel (.xlsx)';
+        logBulkUploadBtn.classList.remove('loaded');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  logBulkEmployeeSelect.addEventListener('change', () => {
+    loadEmployeeRowIntoTextarea(parseInt(logBulkEmployeeSelect.value, 10));
+  });
+
+  function loadEmployeeRowIntoTextarea(rowIndex) {
+    if (!uploadedSheetRows) return;
+    const { header, rows } = uploadedSheetRows;
+    const row = rows[rowIndex];
+    const targetHoursVal = parseInt(document.getElementById('targetHours').value, 10) || 8;
+
+    const lines = [];
+    let skippedDays = 0;
+
+    for (let col = 1; col < header.length; col++) {
+      const headerLabel = String(header[col] || '').trim();
+      if (/^total$/i.test(headerLabel)) continue;
+
+      const cellRaw = row[col];
+      const cell = (cellRaw === undefined || cellRaw === null) ? '' : String(cellRaw).trim();
+      if (!cell || /^nan$/i.test(cell)) continue;
+
+      const timeMatch = cell.match(/^(\d{1,2}):(\d{2})/);
+      if (!timeMatch) {
+        skippedDays++;
+        continue;
+      }
+
+      const hh = parseInt(timeMatch[1], 10);
+      const mm = parseInt(timeMatch[2], 10);
+      lines.push(`${hh}h ${mm}m 0s, ${targetHoursVal}`);
+    }
+
+    logBulkArea.value = lines.join('\n');
+    logBulkFeedback.className = 'log-paste-feedback success';
+    logBulkFeedback.textContent = `✅ Loaded ${lines.length} working day${lines.length === 1 ? '' : 's'} for ${row[0]}${skippedDays ? ` (skipped ${skippedDays} holiday/absent/blank day${skippedDays === 1 ? '' : 's'})` : ''}. Review below, then click Import.`;
+  }
 
   function parseBulkLine(line) {
     const clean = line.trim();
@@ -1541,10 +1838,10 @@
     const resultCard = document.getElementById('resultCard');
 
     if (!state.clockInDate || !state.clockOutDate) {
-      countdownTime.innerHTML = '--:--:--';
+      renderFlipTime(countdownTime, '--:--:--');
       countdownSub.textContent = '📌 Set your clock-in time above to see this fill in';
       countdownSub.classList.remove('done');
-      elapsedOut.textContent = '--:--:--';
+      renderFlipTime(elapsedOut, '--:--:--');
       totalHoursOut.textContent = '--';
       resultCard.classList.remove('exceeded');
       document.getElementById('progressFill').style.width = '0%';
@@ -1559,7 +1856,7 @@
 
     if (remainingSec <= 0) {
       const over = secondsToHMS(-remainingSec);
-      countdownTime.innerHTML = `00:00:<span class="secs">00</span>`;
+      renderFlipTime(countdownTime, '00:00:00', { secsFrom: 6 });
       countdownSub.textContent = `✅ Shift complete. Clocked out ${over.str} ago`;
       countdownSub.classList.add('done');
       if (!resultCard.classList.contains('exceeded')) {
@@ -1568,7 +1865,7 @@
       }
     } else {
       const r = secondsToHMS(remainingSec);
-      countdownTime.innerHTML = `${pad(r.h)}:${pad(r.m)}:<span class="secs">${pad(r.s)}</span>`;
+      renderFlipTime(countdownTime, `${pad(r.h)}:${pad(r.m)}:${pad(r.s)}`, { secsFrom: 6 });
       countdownSub.textContent = now < state.clockInDate
         ? '⏸️ Awaiting clock-in'
         : '🏃🏻 until clock-out';
@@ -1577,7 +1874,7 @@
     }
 
     const e = secondsToHMS(elapsedSec);
-    elapsedOut.textContent = e.str;
+    renderFlipTime(elapsedOut, e.str);
 
     // Total worked hours = elapsed time minus break time already elapsed (capped at total break)
     const elapsedMin = elapsedSec / 60;
@@ -1662,13 +1959,27 @@
 
     const actualWorkMin = Math.max(0, earlyTotalMin - state.totalBreakMin);
     const dailyLogBacklogMin = getDailyLogBacklogMin();
+    const dailyLogAheadMin = getDailyLogAheadMin();
     const targetMin = state.targetWorkMin + dailyLogBacklogMin;
     const diffMin = actualWorkMin - targetMin;
+    const netDiffMin = diffMin + dailyLogAheadMin;
     const targetDisplay = formatDuration(targetMin);
     const hasBacklog = dailyLogBacklogMin > 0.5;
+    const hasAhead = dailyLogAheadMin > 0.5;
     const backlogNote = hasBacklog ? ' (includes your Daily Work Log backlog)' : '';
 
-    if (diffMin < -0.5) {
+    if (hasAhead) {
+      if (diffMin < -0.5 && netDiffMin > 0.5) {
+        earlyResult.classList.add('ontrack');
+        earlyResult.innerHTML = `Heads up, if you leave at <b>${minutesToTimeStr(earlyMin)}</b> you'll be <b>${formatDuration(-diffMin)}</b> short of your <b>${targetDisplay}</b> goal. You've logged <b>${formatDuration(actualWorkMin)}</b> total so far. No backlog carried over, and you're still <b>${formatDuration(netDiffMin)}</b> ahead.`;
+      } else if (diffMin < -0.5 && netDiffMin <= 0.5) {
+        earlyResult.classList.add('short');
+        earlyResult.innerHTML = `Departing at <b>${minutesToTimeStr(earlyMin)}</b> will leave you short by <b>${formatDuration(-netDiffMin)}</b>, even after applying your <b>${formatDuration(dailyLogAheadMin)}</b> banked surplus, against your <b>${targetDisplay}</b> goal.`;
+      } else {
+        earlyResult.classList.add('ontrack');
+        earlyResult.innerHTML = `✅ Departing at <b>${minutesToTimeStr(earlyMin)}</b> covers your <b>${targetDisplay}</b> daily target, and you're carrying an extra <b>${formatDuration(netDiffMin)}</b> ahead including your banked surplus. You're fully covered.`;
+      }
+    } else if (diffMin < -0.5) {
       earlyResult.classList.add('short');
       const noBacklogNote = hasBacklog ? '' : ` No backlog carried over, this is purely against your <b>${targetDisplay}</b> daily target.`;
       earlyResult.innerHTML = `Departing at <b>${minutesToTimeStr(earlyMin)}</b> will leave you short by <b>${formatDuration(-diffMin)}</b> against your <b>${targetDisplay}</b> target${backlogNote}. Total hours logged: <b>${formatDuration(actualWorkMin)}</b>.${noBacklogNote}`;
@@ -1702,7 +2013,7 @@
     const subEl = document.getElementById('earlyCountdownSub');
 
     if (!state.earlyDepartureDate) {
-      timeEl.textContent = '--:--:--';
+      renderFlipTime(timeEl, '--:--:--');
       timeEl.classList.remove('passed');
       subEl.textContent = 'Set a planned departure time above';
       return;
@@ -1713,12 +2024,12 @@
 
     if (remainingSec <= 0) {
       const over = secondsToHMS(-remainingSec);
-      timeEl.textContent = '00:00:00';
+      renderFlipTime(timeEl, '00:00:00');
       timeEl.classList.add('passed');
       subEl.textContent = `Planned departure time reached ${over.str} ago`;
     } else {
       const r = secondsToHMS(remainingSec);
-      timeEl.textContent = r.str;
+      renderFlipTime(timeEl, r.str);
       timeEl.classList.remove('passed');
       subEl.textContent = 'until planned departure';
     }
