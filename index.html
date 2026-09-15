@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Time & Attendance Tracker</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏰</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --deep: #0B2A4A;
@@ -16,6 +19,19 @@
     --line: #D7E6F2;
     --good: #1E8E5A;
     --card: #FFFFFF;
+    --surface: #FCFEFF;
+  }
+  body.dark-mode {
+    --deep: #E8F1FA;
+    --deep2: #C9DDEF;
+    --sky: #5FB8FF;
+    --sky-light: #16283D;
+    --ink: #E8F1FA;
+    --muted: #93AFC7;
+    --line: #2A3F55;
+    --good: #3ED08A;
+    --card: #101E30;
+    --surface: #16283D;
   }
   @keyframes slideDown {
     from { opacity: 0; max-height: 0; transform: translateY(-6px); }
@@ -63,13 +79,17 @@
     font-size: 15px;
     font-weight: 700;
     color: var(--ink);
-    background: #FCFEFF;
+    background: var(--surface);
     outline: none;
     transition: border-color .15s;
   }
   .log-duration-input:focus,
   .log-target-input:focus { border-color: var(--sky); }
   .log-duration-input::placeholder { color: #9FB4C7; font-weight: 500; }
+  .shift-details-inputs .log-duration-input,
+  .shift-details-inputs .log-target-input {
+    font-weight: 400;
+  }
   .log-add-btn {
     display: flex;
     align-items: center;
@@ -86,7 +106,7 @@
     transition: background .15s;
     white-space: nowrap;
   }
-  .log-add-btn:hover { background: #fff; }
+  .log-add-btn:hover { background: var(--surface); }
   .log-add-btn.editing {
     background: var(--sky);
     color: #fff;
@@ -111,7 +131,10 @@
     border-radius: 12px;
     padding: 10px 8px;
     margin-bottom: 8px;
-    background: #fff;
+    background: var(--surface);
+  }
+  body.dark-mode .log-row {
+    border: none;
   }
   .log-row .log-day {
     font-weight: 700;
@@ -172,7 +195,7 @@
     padding: 9px;
     border-radius: 10px;
     border: 1.5px solid var(--sky);
-    background: #fff;
+    background: var(--surface);
     color: var(--deep2);
     font-weight: 700;
     font-size: 12.5px;
@@ -192,16 +215,49 @@
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+    font-family: 'Inter', 'Segoe UI Emoji', Roboto, -apple-system, sans-serif;
     background: linear-gradient(160deg, var(--sky-light) 0%, #FFFFFF 55%);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 28px 24px;
+    justify-content: flex-start;
+    padding: 20px 24px 28px;
     color: var(--ink);
+    transition: background 0.3s ease, color 0.3s ease;
   }
+  body.dark-mode {
+    background: linear-gradient(160deg, #0B1622 0%, #060D16 55%);
+  }
+  .app-header {
+    width: 100%;
+    max-width: 1360px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 4px 20px;
+  }
+  .app-header-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--deep);
+    transition: color 0.3s ease;
+  }
+  .theme-toggle-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    background: var(--card);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.3s ease, border-color 0.3s ease, transform 0.15s ease;
+    flex: none;
+  }
+  .theme-toggle-btn:hover { transform: scale(1.08); }
   .wrap {
     width: 100%;
     max-width: 1360px;
@@ -217,6 +273,9 @@
   }
   @media (max-width: 780px) {
     body { padding: 16px 12px; }
+    .app-header { padding: 4px 4px 16px; }
+    .app-header-title { font-size: 17px; }
+    .theme-toggle-btn { width: 38px; height: 38px; font-size: 16px; }
     .wrap { grid-template-columns: 1fr; gap: 14px; }
     .col3 { grid-column: auto; }
     .card { padding: 16px; }
@@ -239,12 +298,32 @@
     .log-icon-btn { font-size: 12px; }
     .log-row-icons { gap: 3px; }
   }
+  @media (max-width: 420px) {
+    .worked-row,
+    .breakdown {
+      flex-direction: column;
+      gap: 6px;
+    }
+  }
+  @keyframes sectionEntrance {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
   .card {
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: 16px;
     padding: 22px;
     box-shadow: 0 8px 30px rgba(11,42,74,0.06);
+    animation: sectionEntrance 0.55s ease both;
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+  .col > .card:nth-of-type(1) { animation-delay: 0s; }
+  .col > .card:nth-of-type(2) { animation-delay: 0.1s; }
+  .col > .card:nth-of-type(3) { animation-delay: 0.2s; }
+  .col > .card:nth-of-type(4) { animation-delay: 0.3s; }
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; }
   }
   .card-title {
     font-size: 13px;
@@ -271,9 +350,12 @@
     border: 1.5px solid var(--line);
     font-size: 15px;
     color: var(--ink);
-    background: #FCFEFF;
+    background: var(--surface);
     outline: none;
     transition: border-color .15s;
+  }
+  body.dark-mode input {
+    color-scheme: dark;
   }
   input[type="time"]:focus, input[type="number"]:focus {
     border-color: var(--sky);
@@ -302,7 +384,7 @@
     font-size: 11px;
     font-weight: 700;
     color: var(--sky);
-    background: #fff;
+    background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 999px;
     padding: 2px 9px;
@@ -348,9 +430,9 @@
   .result {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(120deg, var(--deep) 0%, var(--deep2) 45%, var(--deep) 100%);
+    background: linear-gradient(120deg, #0B2A4A 0%, #0F3A63 45%, #0B2A4A 100%);
     background-size: 220% 220%;
-    animation: gradientFlow 10s ease infinite;
+    animation: sectionEntrance 0.55s ease both, gradientFlow 10s ease infinite;
     color: #fff;
     border: none;
     box-shadow: 0 10px 30px rgba(11,42,74,0.25);
@@ -471,6 +553,22 @@
   @media (prefers-reduced-motion: reduce) {
     .flip-char.flip-anim { animation: none; }
   }
+  @keyframes digitRoll {
+    0% { transform: translateY(-65%); opacity: 0; }
+    55% { transform: translateY(6%); opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  .roll-char {
+    display: inline-block;
+    overflow: hidden;
+    line-height: 1.1;
+  }
+  .roll-char.roll-anim {
+    animation: digitRoll 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .roll-char.roll-anim { animation: none; }
+  }
   .countdown-time {
     font-size: 38px;
     font-weight: 800;
@@ -532,7 +630,7 @@
     height: 100%;
     width: 0%;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--sky) 0%, var(--deep2) 100%);
+    background: linear-gradient(90deg, var(--sky) 0%, #0F3A63 100%);
     transition: width 0.6s ease, background 0.5s ease;
   }
   .progress-fill.complete {
@@ -552,7 +650,7 @@
     border: 1.5px solid var(--line);
     font-size: 14px;
     color: var(--ink);
-    background: #FCFEFF;
+    background: var(--surface);
     outline: none;
     font-family: inherit;
     resize: vertical;
@@ -599,6 +697,19 @@
     background: var(--sky-light);
     color: #C0392B;
   }
+  .log-clear-all-btn {
+    flex: 0 0 auto;
+    min-width: 0;
+    width: auto;
+    padding: 8px 10px;
+    font-size: 11px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .log-clear-all-btn:hover {
+    background: #FFF0EE;
+    border-color: #C0392B;
+  }
   .collapse-btn {
     background: none;
     border: none;
@@ -637,7 +748,7 @@
     padding: 8px 6px;
     border-radius: 10px;
     border: 1.5px solid var(--line);
-    background: #fff;
+    background: var(--surface);
     color: var(--deep2);
     font-weight: 700;
     font-size: 11px;
@@ -672,7 +783,7 @@
     padding: 20px;
   }
   .modal-box {
-    background: #fff;
+    background: var(--surface);
     border-radius: 18px;
     padding: 24px;
     width: 100%;
@@ -711,9 +822,9 @@
     border-radius: 12px;
     border: 1.5px solid var(--line);
     font-size: 13px;
-    font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+    font-family: 'Inter', 'Segoe UI Emoji', Roboto, -apple-system, sans-serif;
     color: var(--ink);
-    background: #FCFEFF;
+    background: var(--surface);
     resize: vertical;
     outline: none;
   }
@@ -737,7 +848,7 @@
     cursor: pointer;
     transition: background .15s;
   }
-  .modal-import-btn:hover { background: var(--deep2); }
+  .modal-import-btn:hover { background: #0F3A63; }
   .modal-upload-btn {
     width: 100%;
     padding: 11px;
@@ -766,7 +877,7 @@
     font-size: 13px;
     font-weight: 700;
     color: var(--ink);
-    background: #FCFEFF;
+    background: var(--surface);
     margin-bottom: 12px;
     outline: none;
   }
@@ -848,8 +959,9 @@
     cursor: pointer;
     top: 0; left: 0; right: 0; bottom: 0;
     background-color: #C7D9E8;
+    border: 1px solid rgba(11,42,74,0.08);
     border-radius: 999px;
-    transition: background-color .2s;
+    transition: background-color .2s, border-color .2s;
   }
   .toggle-slider::before {
     position: absolute;
@@ -860,6 +972,7 @@
     bottom: 3px;
     background-color: #fff;
     border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
     transition: transform .2s;
   }
   .toggle-switch input:checked + .toggle-slider {
@@ -867,6 +980,36 @@
   }
   .toggle-switch input:checked + .toggle-slider::before {
     transform: translateX(18px);
+  }
+  body.dark-mode .toggle-slider {
+    background-color: #47607A;
+    border-color: rgba(255,255,255,0.18);
+  }
+  body.dark-mode .toggle-switch input:checked + .toggle-slider {
+    background-color: var(--sky);
+    border-color: transparent;
+  }
+  body.dark-mode .log-summary.short,
+  body.dark-mode .early-result.short,
+  body.dark-mode .late-motivation {
+    background: rgba(240, 196, 138, 0.12);
+    border-color: #F0C48A;
+    color: #F5C77E;
+  }
+  body.dark-mode .log-summary.clear,
+  body.dark-mode .early-result.ontrack,
+  body.dark-mode .late-motivation.clear,
+  body.dark-mode .log-io-btn.copied,
+  body.dark-mode .modal-upload-btn.loaded {
+    background: rgba(62, 208, 138, 0.14);
+    border-color: var(--good);
+    color: #6EEBB0;
+  }
+  body.dark-mode .sync-btn.early-sync-btn:hover {
+    background: rgba(62, 208, 138, 0.14);
+  }
+  body.dark-mode .modal-upload-btn:hover {
+    background: var(--sky-light);
   }
   .app-footer {
     width: 100%;
@@ -880,6 +1023,18 @@
 </style>
 </head>
 <body>
+<header class="app-header">
+  <span class="app-header-title">⏰ Clock me Out</span>
+  <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
+</header>
+<script>
+  (function () {
+    if (localStorage.getItem('cmoTheme') === 'dark') {
+      document.body.classList.add('dark-mode');
+      document.getElementById('themeToggleBtn').textContent = '☀️';
+    }
+  })();
+</script>
 <div class="wrap">
   <div class="col col3">
     <div class="card">
@@ -892,7 +1047,7 @@
       <div class="log-input-card">
         <div class="log-input-box">
           <label>Hours Clocked</label>
-          <input type="text" id="logDuration" class="log-duration-input" placeholder="00h 00m 00s">
+          <input type="text" id="logDuration" class="log-duration-input" placeholder="0h 0m 0s">
         </div>
         <div class="log-input-box">
           <label>Working Hours</label>
@@ -902,8 +1057,9 @@
       </div>
 
       <div class="log-io-row">
-        <button class="log-io-btn" id="logCopyBtn" type="button">📄 Copy Data</button>
+        <button class="log-io-btn" id="logCopyBtn" type="button">📄 Copy Log</button>
         <button class="log-io-btn" id="logBulkBtn" type="button">🗃️ Bulk Import</button>
+        <button class="log-io-btn log-clear-all-btn" id="clearLogBtn" type="button" style="display:none;" aria-label="Clear all logged days">🗑️ Clear All</button>
       </div>
 
       <div id="logListWrap" style="display:none;">
@@ -930,13 +1086,13 @@
         <span>📋 Shift Details</span>
         <span class="date-banner" id="dateBanner"></span>
       </div>
-      <div class="log-input-card two-col">
+      <div class="log-input-card two-col shift-details-inputs">
         <div class="log-input-box">
-          <label for="clockIn">🕘 Clock-in Time</label>
+          <label for="clockIn">Clock-in Time</label>
           <input type="time" id="clockIn" value="09:30" class="log-duration-input">
         </div>
         <div class="log-input-box">
-          <label for="targetHours">🎯 Target Working Hours</label>
+          <label for="targetHours">Working Hours</label>
           <input type="number" id="targetHours" value="8" min="0" step="0.25" class="log-target-input">
         </div>
       </div>
@@ -1038,7 +1194,7 @@
         <div class="row">
           <div>
             <label for="earlyTime">Planned Departure Time</label>
-            <input type="time" id="earlyTime">
+            <input type="time" id="earlyTime" value="18:00">
           </div>
         </div>
         <div id="earlyCountdownWrap" style="display:none;">
@@ -1052,13 +1208,13 @@
   </div>
 </div>
 
-<div class="app-footer">© 2026 Basil Melepat · Designed for you</div>
+<div class="app-footer">© 2026 Basil Melepat · Designed for You</div>
 
 <div class="modal-overlay" id="logBulkOverlay" style="display:none;">
   <div class="modal-box">
     <div class="modal-header">
       <span>⌛ Work Log Bulk Import</span>
-      <button class="modal-close" id="logBulkCloseBtn" type="button" aria-label="Close">✕</button>
+      <button class="modal-close" id="logBulkCloseBtn" type="button" aria-label="Close">❌</button>
     </div>
     <button id="logBulkUploadBtn" class="modal-upload-btn" type="button">📎 Upload Attendance Excel (.xlsx)</button>
     <input type="file" id="logBulkFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
@@ -1072,6 +1228,13 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  themeToggleBtn.addEventListener('click', () => {
+    const isDark = document.body.classList.toggle('dark-mode');
+    themeToggleBtn.textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('cmoTheme', isDark ? 'dark' : 'light');
+  });
+
   const breaksContainer = document.getElementById('breaksContainer');
   const addBreakBtn = document.getElementById('addBreakBtn');
   let breakCount = 0;
@@ -1187,13 +1350,15 @@
 
   function renderFlipTime(el, text, opts) {
     opts = opts || {};
+    const charClass = opts.charClass || 'flip-char';
+    const animClass = opts.animClass || 'flip-anim';
     const chars = text.split('');
 
     if (!el._flipSpans || el._flipSpans.length !== chars.length) {
       el.innerHTML = '';
       el._flipSpans = chars.map((c, i) => {
         const span = document.createElement('span');
-        span.className = 'flip-char';
+        span.className = charClass;
         if (opts.secsFrom !== undefined && i >= opts.secsFrom) span.classList.add('secs');
         span.textContent = c;
         el.appendChild(span);
@@ -1206,9 +1371,9 @@
       const span = el._flipSpans[i];
       if (span.textContent !== c) {
         span.textContent = c;
-        span.classList.remove('flip-anim');
+        span.classList.remove(animClass);
         void span.offsetWidth;
-        span.classList.add('flip-anim');
+        span.classList.add(animClass);
       }
     });
   }
@@ -1345,6 +1510,7 @@
 
   const logEntriesContainer = document.getElementById('logEntriesContainer');
   const logListWrap = document.getElementById('logListWrap');
+  const clearLogBtn = document.getElementById('clearLogBtn');
   const addLogEntryBtn = document.getElementById('addLogEntryBtn');
   const syncLogBtn = document.getElementById('syncLogBtn');
   const syncEarlyLogBtn = document.getElementById('syncEarlyLogBtn');
@@ -1399,6 +1565,7 @@
   function renderLogList() {
     logEntriesContainer.innerHTML = '';
     logListWrap.style.display = logEntries.length ? 'block' : 'none';
+    clearLogBtn.style.display = logEntries.length ? 'block' : 'none';
 
     logEntries.forEach((entry, idx) => {
       const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
@@ -1477,6 +1644,17 @@
       logDuration.focus();
     }
 
+    renderLogList();
+    calculateLog();
+  });
+
+  clearLogBtn.addEventListener('click', () => {
+    if (logEntries.length > 1 && !confirm(`Remove all ${logEntries.length} logged days? This can't be undone.`)) {
+      return;
+    }
+    logEntries = [];
+    logEntryCount = 0;
+    if (logEditingId !== null) cancelEditLogEntry();
     renderLogList();
     calculateLog();
   });
@@ -1608,7 +1786,7 @@
   logCopyBtn.addEventListener('click', () => {
     if (logEntries.length === 0) {
       logCopyBtn.textContent = 'Nothing to copy';
-      setTimeout(() => { logCopyBtn.textContent = '📋 Copy'; }, 1500);
+      setTimeout(() => { logCopyBtn.textContent = '📄 Copy Log'; }, 1500);
       return;
     }
     const lines = logEntries.map(entry => {
@@ -1624,7 +1802,7 @@
       logCopyBtn.textContent = '✅ Copied';
       logCopyBtn.classList.add('copied');
       setTimeout(() => {
-        logCopyBtn.textContent = '📋 Copy';
+        logCopyBtn.textContent = '📄 Copy Log';
         logCopyBtn.classList.remove('copied');
       }, 1500);
     };
@@ -1771,7 +1949,13 @@
 
     logBulkArea.value = lines.join('\n');
     logBulkFeedback.className = 'log-paste-feedback success';
-    logBulkFeedback.textContent = `✅ Loaded ${lines.length} working day${lines.length === 1 ? '' : 's'} for ${row[0]}${skippedDays ? ` (skipped ${skippedDays} holiday/absent/blank day${skippedDays === 1 ? '' : 's'})` : ''}. Review below, then click Import.`;
+
+    const fullName = String(row[0] || '').trim();
+    const firstName = fullName.split(/\s+/)[0] || '';
+    const greeting = firstName ? `Hey ${firstName}! ` : '';
+    const skippedNote = skippedDays ? ` (skipped ${skippedDays} holiday/absent/blank day${skippedDays === 1 ? '' : 's'}, no worries, those don't count)` : '';
+
+    logBulkFeedback.textContent = `${greeting}found ${lines.length} working day${lines.length === 1 ? '' : 's'} for you${skippedNote}. Take a quick look above, then hit Import when you're ready.`;
   }
 
   function parseBulkLine(line) {
@@ -1838,7 +2022,7 @@
     const resultCard = document.getElementById('resultCard');
 
     if (!state.clockInDate || !state.clockOutDate) {
-      renderFlipTime(countdownTime, '--:--:--');
+      renderFlipTime(countdownTime, '--:--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
       countdownSub.textContent = '📌 Set your clock-in time above to see this fill in';
       countdownSub.classList.remove('done');
       renderFlipTime(elapsedOut, '--:--:--');
@@ -1856,7 +2040,7 @@
 
     if (remainingSec <= 0) {
       const over = secondsToHMS(-remainingSec);
-      renderFlipTime(countdownTime, '00:00:00', { secsFrom: 6 });
+      renderFlipTime(countdownTime, '00:00:00', { secsFrom: 6, charClass: 'roll-char', animClass: 'roll-anim' });
       countdownSub.textContent = `✅ Shift complete. Clocked out ${over.str} ago`;
       countdownSub.classList.add('done');
       if (!resultCard.classList.contains('exceeded')) {
@@ -1865,7 +2049,7 @@
       }
     } else {
       const r = secondsToHMS(remainingSec);
-      renderFlipTime(countdownTime, `${pad(r.h)}:${pad(r.m)}:${pad(r.s)}`, { secsFrom: 6 });
+      renderFlipTime(countdownTime, `${pad(r.h)}:${pad(r.m)}:${pad(r.s)}`, { secsFrom: 6, charClass: 'roll-char', animClass: 'roll-anim' });
       countdownSub.textContent = now < state.clockInDate
         ? '⏸️ Awaiting clock-in'
         : '🏃🏻 until clock-out';
@@ -2013,7 +2197,7 @@
     const subEl = document.getElementById('earlyCountdownSub');
 
     if (!state.earlyDepartureDate) {
-      renderFlipTime(timeEl, '--:--:--');
+      renderFlipTime(timeEl, '--:--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
       timeEl.classList.remove('passed');
       subEl.textContent = 'Set a planned departure time above';
       return;
@@ -2024,12 +2208,12 @@
 
     if (remainingSec <= 0) {
       const over = secondsToHMS(-remainingSec);
-      renderFlipTime(timeEl, '00:00:00');
+      renderFlipTime(timeEl, '00:00:00', { charClass: 'roll-char', animClass: 'roll-anim' });
       timeEl.classList.add('passed');
       subEl.textContent = `Planned departure time reached ${over.str} ago`;
     } else {
       const r = secondsToHMS(remainingSec);
-      renderFlipTime(timeEl, r.str);
+      renderFlipTime(timeEl, r.str, { charClass: 'roll-char', animClass: 'roll-anim' });
       timeEl.classList.remove('passed');
       subEl.textContent = 'until planned departure';
     }
@@ -2047,6 +2231,7 @@
     earlyTitleRow.style.display = 'flex';
     earlyPlannerBody.style.display = 'block';
     earlyPlannerBody.classList.add('reveal');
+    calculateEarlyPlan();
     document.getElementById('earlyTime').focus();
   });
 
