@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Time & Attendance Tracker</title>
+<title>Clock me Out</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏰</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -516,6 +516,20 @@
     font-size: 13px;
     color: #C9DDEF;
   }
+  .clockout-date-note {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .result.exceeded .clockout-date-note {
+    background: rgba(255,255,255,0.2);
+  }
   .breakdown {
     margin-top: 14px;
     padding-top: 14px;
@@ -525,7 +539,7 @@
     font-size: 12.5px;
     color: #C9DDEF;
   }
-  .breakdown b { color: #fff; }
+  .breakdown b { color: #fff; perspective: 160px; }
   .error {
     text-align: center;
     color: #C0392B;
@@ -1098,45 +1112,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">
-        <span>☕ Scheduled Breaks</span>
-        <button class="clear-btn" id="clearBreaksBtn" type="button" style="display:none;" aria-label="Clear all breaks">🗑️ Clear All</button>
-      </div>
-      <div id="breaksContainer"></div>
-      <button class="add-btn" id="addBreakBtn">➕ Add Break</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title" id="lateTitleRow" style="display:none;">
-        <span>⏱️ Running Late Balance</span>
-        <button class="clear-btn" id="clearLateBtn" type="button" aria-label="Clear running late balance">🗑️ Clear</button>
-      </div>
-      <button class="add-btn" id="addLatePlanBtn" type="button">➕ Add Running Late Time</button>
-      <div id="latePlannerBody" style="display:none;">
-        <div class="row">
-          <div>
-            <label for="lateMinutes">Minutes Behind</label>
-            <input type="number" id="lateMinutes" placeholder="0" min="0" step="1">
-          </div>
-          <div>
-            <label for="lateSeconds">Seconds Behind</label>
-            <input type="number" id="lateSeconds" placeholder="0" min="0" max="59" step="1">
-          </div>
-        </div>
-        <div class="toggle-row">
-          <label for="lateIncludeToggle">Add this backlog to today's time remaining</label>
-          <label class="toggle-switch">
-            <input type="checkbox" id="lateIncludeToggle">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="late-motivation" id="lateMotivation">Enter your running-late balance to see today's adjusted target.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col">
     <div class="card countdown-card">
       <div class="card-title">
         <span>⏳ Time Remaining</span>
@@ -1176,6 +1151,7 @@
       </div>
       <div class="result-body">
         <div class="time" id="clockOutTime">--:--</div>
+        <div class="clockout-date-note" id="clockOutDateNote" style="display:none;"></div>
         <div class="detail" id="resultDetail"></div>
       </div>
       <div class="breakdown">
@@ -1183,11 +1159,50 @@
         <span>☕ Break Time: <b id="breakHoursOut">--</b></span>
       </div>
     </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <div class="card-title">
+        <span>☕ Scheduled Breaks</span>
+        <button class="clear-btn" id="clearBreaksBtn" type="button" style="display:none;" aria-label="Clear all breaks">🗑️ Clear All</button>
+      </div>
+      <div id="breaksContainer"></div>
+      <button class="add-btn" id="addBreakBtn">➕ Add Break</button>
+    </div>
 
     <div class="card">
-      <div class="card-title" id="earlyTitleRow" style="display:none;">
+      <div class="card-title" id="lateTitleRow">
+        <span>⏱️ Running Late Balance</span>
+        <button class="clear-btn" id="clearLateBtn" type="button" style="display:none;" aria-label="Clear running late balance">🗑️ Clear</button>
+      </div>
+      <button class="add-btn" id="addLatePlanBtn" type="button">➕ Add Running Late Time</button>
+      <div id="latePlannerBody" style="display:none;">
+        <div class="row">
+          <div>
+            <label for="lateMinutes">Minutes Behind</label>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="10" id="lateMinutes" placeholder="0">
+          </div>
+          <div>
+            <label for="lateSeconds">Seconds Behind</label>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="10" id="lateSeconds" placeholder="0">
+          </div>
+        </div>
+        <div class="toggle-row">
+          <label for="lateIncludeToggle">Add this backlog to today's time remaining</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="lateIncludeToggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="late-motivation" id="lateMotivation">Enter your running-late balance to see today's adjusted target.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="earlyTitleRow">
         <span>📤 Early Departure Planner</span>
-        <button class="clear-btn" id="clearEarlyBtn" type="button" aria-label="Clear early departure plan">🗑️ Clear</button>
+        <button class="clear-btn" id="clearEarlyBtn" type="button" style="display:none;" aria-label="Clear early departure plan">🗑️ Clear</button>
       </div>
       <button class="add-btn" id="addEarlyPlanBtn" type="button">➕ Add Early Departure Plan</button>
       <div id="earlyPlannerBody" style="display:none;">
@@ -1269,6 +1284,7 @@
       </div>
     `;
     breaksContainer.appendChild(div);
+    div.classList.add('reveal');
     div.querySelector('[data-remove]').addEventListener('click', () => {
       div.remove();
       renumber();
@@ -1409,10 +1425,11 @@
     const breakOut = document.getElementById('breakHoursOut');
 
     if (!clockIn) {
-      timeEl.textContent = '--:--';
+      renderFlipTime(timeEl, '--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
       errorEl.textContent = '👇 Please enter your clock-in time';
-      workOut.textContent = '--';
-      breakOut.textContent = '--';
+      renderFlipTime(workOut, '--');
+      renderFlipTime(breakOut, '--');
+      document.getElementById('clockOutDateNote').style.display = 'none';
       state.clockInDate = null;
       state.clockOutDate = null;
       updateCountdown();
@@ -1439,17 +1456,33 @@
     const targetWorkMin = baseTargetMin + backlogMin;
     const clockOutMin = clockInMin + targetWorkMin + totalBreakMin;
 
-    timeEl.textContent = minutesToTimeStr(clockOutMin);
-    errorEl.textContent = `🕘 Clocked in at ${minutesToTimeStr(clockInMin)}`;
-    workOut.textContent = formatDuration(targetWorkMin);
-    breakOut.textContent = totalBreakMin > 0 ? formatDuration(totalBreakMin) : 'No breaks taken';
-
     // Build real Date objects anchored to today for the live countdown
     const now = new Date();
     const clockInDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     clockInDate.setMinutes(clockInMin);
     const clockOutDate = new Date(clockInDate.getTime());
     clockOutDate.setMinutes(clockOutDate.getMinutes() + targetWorkMin + totalBreakMin);
+
+    renderFlipTime(timeEl, minutesToTimeStr(clockOutMin), { charClass: 'roll-char', animClass: 'roll-anim' });
+    errorEl.textContent = `🕘 Clocked in at ${minutesToTimeStr(clockInMin)}`;
+    renderFlipTime(workOut, formatDuration(targetWorkMin));
+    renderFlipTime(breakOut, totalBreakMin > 0 ? formatDuration(totalBreakMin) : 'No breaks taken');
+
+    const dateNoteEl = document.getElementById('clockOutDateNote');
+    const daysAhead = Math.floor(clockOutMin / 1440);
+    if (daysAhead >= 1) {
+      if (clockOutDate.getFullYear() > 2999) {
+        dateNoteEl.textContent = '😵😵😵';
+      } else {
+        const dateLabel = daysAhead === 1
+          ? 'Tomorrow'
+          : clockOutDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        dateNoteEl.textContent = `📅 ${dateLabel}`;
+      }
+      dateNoteEl.style.display = 'inline-block';
+    } else {
+      dateNoteEl.style.display = 'none';
+    }
 
     state.clockInDate = clockInDate;
     state.clockOutDate = clockOutDate;
@@ -1458,7 +1491,7 @@
 
     updateCountdown();
     calculateEarlyPlan();
-    updateLateMotivation(rawBacklogMin, includeLate, targetHours, clockOutDate);
+    updateLateMotivation(rawBacklogMin, includeLate, targetHours, clockOutDate, daysAhead);
   }
 
   function formatMinSec(totalMinutes) {
@@ -1470,7 +1503,7 @@
     return `${m}m ${s}s`;
   }
 
-  function updateLateMotivation(backlogMin, includeLate, targetHours, clockOutDate) {
+  function updateLateMotivation(backlogMin, includeLate, targetHours, clockOutDate, daysAhead) {
     const box = document.getElementById('lateMotivation');
     box.classList.remove('clear');
 
@@ -1490,12 +1523,31 @@
     const newTargetStr = formatDuration(targetHours * 60 + backlogMin);
 
     let clockOutLine = '';
+    let satiricalLine = '';
+
     if (clockOutDate) {
       const clockOutStr = clockOutDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }).toUpperCase();
-      clockOutLine = ` Projected clock-out: <b>${clockOutStr}</b>.`;
+      const ahead = daysAhead || 0;
+
+      if (clockOutDate.getFullYear() > 2999) {
+        clockOutLine = ` Projected clock-out: <b>😵😵😵</b>.`;
+        satiricalLine = ` At this point your backlog has outlived several civilizations. Historians will study this shift.`;
+      } else if (ahead >= 10) {
+        const dayLabel = clockOutDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        clockOutLine = ` Projected clock-out: <b>${clockOutStr}</b> on <b>${dayLabel}</b> (<b>${ahead} days</b> from now).`;
+        satiricalLine = ` That's not a backlog anymore, that's a lifestyle. Might want to check in with HR, or possibly a time-travel specialist.`;
+      } else if (ahead >= 2) {
+        const dayLabel = clockOutDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+        clockOutLine = ` Projected clock-out: <b>${clockOutStr}</b> on <b>${dayLabel}</b>.`;
+      } else if (ahead === 1) {
+        clockOutLine = ` Projected clock-out: <b>${clockOutStr}</b> tomorrow.`;
+      } else {
+        clockOutLine = ` Projected clock-out: <b>${clockOutStr}</b>.`;
+      }
     }
 
-    box.innerHTML = `⏱️ Backlog of <b>${backlogStr}</b> has been added to today's target, bringing it to <b>${newTargetStr}</b>.${clockOutLine} Completing today's shift as planned will fully offset the shortfall.`;
+    const closingLine = satiricalLine || ' Completing today\'s shift as planned will fully offset the shortfall.';
+    box.innerHTML = `⏱️ Backlog of <b>${backlogStr}</b> has been added to today's target, bringing it to <b>${newTargetStr}</b>.${clockOutLine}${closingLine}`;
   }
 
   // ---- Daily Work Log ----
@@ -1519,6 +1571,25 @@
   let logEntryCount = 0;
   let logEditingId = null;
   let logEntries = [];
+
+  function saveLogEntries() {
+    try {
+      localStorage.setItem('cmoLogEntries', JSON.stringify(logEntries));
+      localStorage.setItem('cmoLogEntryCount', String(logEntryCount));
+    } catch (e) { /* storage unavailable, fail silently */ }
+  }
+
+  function loadLogEntriesFromStorage() {
+    try {
+      const saved = localStorage.getItem('cmoLogEntries');
+      const savedCount = localStorage.getItem('cmoLogEntryCount');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) logEntries = parsed;
+      }
+      if (savedCount) logEntryCount = parseInt(savedCount, 10) || 0;
+    } catch (e) { /* corrupt or unavailable storage, start fresh */ }
+  }
 
   function clampField(el, max) {
     el.value = el.value.replace(/[^0-9]/g, '');
@@ -1598,6 +1669,7 @@
       btn.addEventListener('click', () => {
         logEntries = logEntries.filter(e => e.id !== parseInt(btn.dataset.remove, 10));
         if (logEditingId === parseInt(btn.dataset.remove, 10)) cancelEditLogEntry();
+        saveLogEntries();
         renderLogList();
         calculateLog();
       });
@@ -1646,6 +1718,7 @@
 
     renderLogList();
     calculateLog();
+    saveLogEntries();
   });
 
   clearLogBtn.addEventListener('click', () => {
@@ -1655,6 +1728,7 @@
     logEntries = [];
     logEntryCount = 0;
     if (logEditingId !== null) cancelEditLogEntry();
+    saveLogEntries();
     renderLogList();
     calculateLog();
   });
@@ -1744,7 +1818,7 @@
     const wholeMin = Math.floor(backlogMin);
     const secs = Math.round((backlogMin - wholeMin) * 60);
 
-    if (!document.getElementById('lateTitleRow').style.display || document.getElementById('lateTitleRow').style.display === 'none') {
+    if (!state.lateSectionActive) {
       document.getElementById('addLatePlanBtn').click();
     }
     document.getElementById('lateMinutes').value = wholeMin;
@@ -1773,7 +1847,7 @@
     suggestedDate.setMinutes(suggestedDate.getMinutes() - aheadMin);
     const suggestedTime = `${pad(suggestedDate.getHours())}:${pad(suggestedDate.getMinutes())}`;
 
-    if (!earlyTitleRow.style.display || earlyTitleRow.style.display === 'none') {
+    if (earlyPlannerBody.style.display !== 'block') {
       addEarlyPlanBtn.click();
     }
     document.getElementById('earlyTime').value = suggestedTime;
@@ -2004,6 +2078,7 @@
     });
 
     if (imported > 0) {
+      saveLogEntries();
       renderLogList();
       calculateLog();
       closeBulkModal();
@@ -2026,7 +2101,7 @@
       countdownSub.textContent = '📌 Set your clock-in time above to see this fill in';
       countdownSub.classList.remove('done');
       renderFlipTime(elapsedOut, '--:--:--');
-      totalHoursOut.textContent = '--';
+      renderFlipTime(totalHoursOut, '--');
       resultCard.classList.remove('exceeded');
       document.getElementById('progressFill').style.width = '0%';
       document.getElementById('progressFill').classList.remove('complete');
@@ -2067,7 +2142,7 @@
     const workedH = Math.floor(workedMin / 60);
     const workedM = Math.floor(workedMin % 60);
     const workedS = Math.floor((workedMin * 60) % 60);
-    totalHoursOut.textContent = `${pad(workedH)}:${pad(workedM)}:${pad(workedS)}`;
+    renderFlipTime(totalHoursOut, `${pad(workedH)}:${pad(workedM)}:${pad(workedS)}`);
 
     // Progress bar: elapsed vs total session duration (work + breaks)
     const totalSessionSec = Math.max(1, (state.clockOutDate - state.clockInDate) / 1000);
@@ -2085,18 +2160,20 @@
 
   document.getElementById('clockIn').addEventListener('input', calculate);
   document.getElementById('targetHours').addEventListener('input', calculate);
-  document.getElementById('lateMinutes').addEventListener('input', calculate);
-  document.getElementById('lateSeconds').addEventListener('input', calculate);
+  function filterDigitsOnly(el) {
+    el.value = el.value.replace(/[^0-9]/g, '').slice(0, 10);
+  }
+  document.getElementById('lateMinutes').addEventListener('input', (e) => { filterDigitsOnly(e.target); calculate(); });
+  document.getElementById('lateSeconds').addEventListener('input', (e) => { filterDigitsOnly(e.target); calculate(); });
   document.getElementById('lateIncludeToggle').addEventListener('change', calculate);
 
   const addLatePlanBtn = document.getElementById('addLatePlanBtn');
   const latePlannerBody = document.getElementById('latePlannerBody');
   const clearLateBtn = document.getElementById('clearLateBtn');
-  const lateTitleRow = document.getElementById('lateTitleRow');
 
   addLatePlanBtn.addEventListener('click', () => {
     addLatePlanBtn.style.display = 'none';
-    lateTitleRow.style.display = 'flex';
+    clearLateBtn.style.display = 'inline-block';
     latePlannerBody.style.display = 'block';
     latePlannerBody.classList.add('reveal');
     state.lateSectionActive = true;
@@ -2110,7 +2187,7 @@
     document.getElementById('lateIncludeToggle').checked = false;
     state.lateSectionActive = false;
     calculate();
-    lateTitleRow.style.display = 'none';
+    clearLateBtn.style.display = 'none';
     latePlannerBody.style.display = 'none';
     addLatePlanBtn.style.display = 'block';
   });
@@ -2224,11 +2301,10 @@
   const addEarlyPlanBtn = document.getElementById('addEarlyPlanBtn');
   const earlyPlannerBody = document.getElementById('earlyPlannerBody');
   const clearEarlyBtn = document.getElementById('clearEarlyBtn');
-  const earlyTitleRow = document.getElementById('earlyTitleRow');
 
   addEarlyPlanBtn.addEventListener('click', () => {
     addEarlyPlanBtn.style.display = 'none';
-    earlyTitleRow.style.display = 'flex';
+    clearEarlyBtn.style.display = 'inline-block';
     earlyPlannerBody.style.display = 'block';
     earlyPlannerBody.classList.add('reveal');
     calculateEarlyPlan();
@@ -2238,10 +2314,14 @@
   clearEarlyBtn.addEventListener('click', () => {
     document.getElementById('earlyTime').value = '';
     calculateEarlyPlan();
-    earlyTitleRow.style.display = 'none';
+    clearEarlyBtn.style.display = 'none';
     earlyPlannerBody.style.display = 'none';
     addEarlyPlanBtn.style.display = 'block';
   });
+
+  loadLogEntriesFromStorage();
+  renderLogList();
+  calculateLog();
 
   calculate();
 
