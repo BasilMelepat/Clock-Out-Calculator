@@ -1089,7 +1089,7 @@
 
       <div class="log-summary clear" id="logSummary">Log your daily hours to track your running-late balance automatically.</div>
       <button class="sync-btn" id="syncLogBtn" type="button" style="display:none;">🔄️ Sync to Running Late Balance</button>
-      <button class="sync-btn early-sync-btn" id="syncEarlyLogBtn" type="button" style="display:none;">🌇 Plan an Early Departure</button>
+      <button class="sync-btn early-sync-btn" id="syncEarlyLogBtn" type="button" style="display:none;">🌇 Plan an early Departure</button>
       </div>
     </div>
   </div>
@@ -1159,6 +1159,7 @@
         <span>☕ Break Time: <b id="breakHoursOut">--</b></span>
       </div>
     </div>
+    <div id="footerAnchor"></div>
   </div>
 
   <div class="col">
@@ -1201,10 +1202,10 @@
 
     <div class="card">
       <div class="card-title" id="earlyTitleRow">
-        <span>📤 Early Departure Planner</span>
-        <button class="clear-btn" id="clearEarlyBtn" type="button" style="display:none;" aria-label="Clear early departure plan">🗑️ Clear</button>
+        <span>📤 Departure Planner</span>
+        <button class="clear-btn" id="clearEarlyBtn" type="button" style="display:none;" aria-label="Clear departure plan">🗑️ Clear</button>
       </div>
-      <button class="add-btn" id="addEarlyPlanBtn" type="button">➕ Add Early Departure Plan</button>
+      <button class="add-btn" id="addEarlyPlanBtn" type="button">➕ Add Departure Plan</button>
       <div id="earlyPlannerBody" style="display:none;">
         <div class="row">
           <div>
@@ -1223,7 +1224,7 @@
   </div>
 </div>
 
-<div class="app-footer">© 2026 Basil Melepat · Designed for You</div>
+<div class="app-footer" id="appFooter">© 2026 Basil Melepat · Designed for You</div>
 
 <div class="modal-overlay" id="logBulkOverlay" style="display:none;">
   <div class="modal-box">
@@ -1466,7 +1467,7 @@
     renderFlipTime(timeEl, minutesToTimeStr(clockOutMin), { charClass: 'roll-char', animClass: 'roll-anim' });
     errorEl.textContent = `🕘 Clocked in at ${minutesToTimeStr(clockInMin)}`;
     renderFlipTime(workOut, formatDuration(targetWorkMin));
-    renderFlipTime(breakOut, totalBreakMin > 0 ? formatDuration(totalBreakMin) : 'No breaks taken');
+    renderFlipTime(breakOut, totalBreakMin > 0 ? formatDuration(totalBreakMin) : 'Not taken');
 
     const dateNoteEl = document.getElementById('clockOutDateNote');
     const daysAhead = Math.floor(clockOutMin / 1440);
@@ -1603,8 +1604,22 @@
     const v = parseInt(el.value, 10);
     if (!isNaN(v)) el.value = pad(v);
   }
+  function enableArrowKeyStep(el, min, max) {
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+      e.preventDefault();
+      let v = parseInt(el.value, 10);
+      if (isNaN(v)) v = 0;
+      v += (e.key === 'ArrowUp') ? 1 : -1;
+      if (v < min) v = min;
+      if (v > max) v = max;
+      el.value = String(v);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
   logTarget.addEventListener('input', () => clampField(logTarget, 99));
   logTarget.addEventListener('blur', () => padOnBlur(logTarget));
+  enableArrowKeyStep(logTarget, 0, 99);
 
   function parseDurationText(text) {
     const clean = (text || '').trim();
@@ -1793,7 +1808,7 @@
       summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${formatMinSec(aheadMin)}</b>. No backlog, nice work! You've earned an early departure today.`;
       syncLogBtn.style.display = 'none';
       syncEarlyLogBtn.style.display = 'block';
-      syncEarlyLogBtn.textContent = `🌇 Plan an Early Departure (${formatMinSec(aheadMin)})`;
+      syncEarlyLogBtn.textContent = `🌇 Plan a Departure (${formatMinSec(aheadMin)})`;
       logSyncMode = 'ahead';
     } else {
       summary.classList.add('clear');
@@ -2165,6 +2180,8 @@
   }
   document.getElementById('lateMinutes').addEventListener('input', (e) => { filterDigitsOnly(e.target); calculate(); });
   document.getElementById('lateSeconds').addEventListener('input', (e) => { filterDigitsOnly(e.target); calculate(); });
+  enableArrowKeyStep(document.getElementById('lateMinutes'), 0, 9999999999);
+  enableArrowKeyStep(document.getElementById('lateSeconds'), 0, 9999999999);
   document.getElementById('lateIncludeToggle').addEventListener('change', calculate);
 
   const addLatePlanBtn = document.getElementById('addLatePlanBtn');
@@ -2256,6 +2273,10 @@
         : `✅ No backlog today. Departing at <b>${minutesToTimeStr(earlyMin)}</b> meets your <b>${targetDisplay}</b> daily target exactly.`;
     }
 
+    if (earlyMin === 0) {
+      earlyResult.innerHTML += ` <br><br>⏰ Technically you're leaving 'today' and arriving 'tomorrow' at the exact same moment. Physics is confused. So are we.`;
+    }
+
     // Anchor the planned departure time to the same calendar day as clock-in,
     // rolling to the next day if the departure time is earlier than clock-in.
     const departureDate = new Date(state.clockInDate.getTime());
@@ -2334,6 +2355,21 @@
     updateCountdown();
     updateEarlyCountdown();
   }, 1000);
+
+  // Move the footer below Clock-Out Time when all 3 columns are visible side by side,
+  // otherwise keep it in its normal spot at the bottom of the page.
+  function positionFooter() {
+    const footer = document.getElementById('appFooter');
+    const anchor = document.getElementById('footerAnchor');
+    const wrap = document.querySelector('.wrap');
+    if (window.innerWidth > 1100) {
+      anchor.after(footer);
+    } else {
+      wrap.after(footer);
+    }
+  }
+  positionFooter();
+  window.addEventListener('resize', positionFooter);
 
 </script>
 </body>
