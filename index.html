@@ -1314,10 +1314,6 @@
     durationEl.textContent = formatDuration(eMin - sMin);
   }
 
-  function updateAllBreakDurations() {
-    breaksContainer.querySelectorAll('.break-item').forEach(updateBreakDuration);
-  }
-
   function renumber() {
     const items = breaksContainer.querySelectorAll('.break-item');
     items.forEach((item, idx) => {
@@ -1808,7 +1804,7 @@
       summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${formatMinSec(aheadMin)}</b>. No backlog, nice work! You've earned an early departure today.`;
       syncLogBtn.style.display = 'none';
       syncEarlyLogBtn.style.display = 'block';
-      syncEarlyLogBtn.textContent = `🌇 Plan a Departure (${formatMinSec(aheadMin)})`;
+      syncEarlyLogBtn.textContent = `🌇 Plan an early Departure (${formatMinSec(aheadMin)})`;
       logSyncMode = 'ahead';
     } else {
       summary.classList.add('clear');
