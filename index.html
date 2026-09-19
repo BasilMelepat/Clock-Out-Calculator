@@ -863,6 +863,137 @@
     transition: background .15s;
   }
   .modal-import-btn:hover { background: #0F3A63; }
+  .log-view-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    border-bottom: 1.5px solid var(--line);
+  }
+  .log-tab {
+    flex: 1;
+    padding: 9px 6px;
+    background: none;
+    border: none;
+    border-bottom: 2.5px solid transparent;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    margin-bottom: -1.5px;
+    transition: color .15s, border-color .15s;
+  }
+  .log-tab:hover { color: var(--deep2); }
+  .log-tab.active {
+    color: var(--sky);
+    border-bottom-color: var(--sky);
+  }
+  .calendar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .calendar-nav-btn {
+    background: var(--sky-light);
+    border: none;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--deep2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .calendar-nav-btn:hover { background: var(--line); }
+  .calendar-month-label {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--deep2);
+  }
+  .calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .calendar-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .calendar-cell.empty {
+    background: transparent;
+    border: none;
+  }
+  .calendar-cell .cal-day-num {
+    line-height: 1;
+  }
+  .calendar-cell .cal-day-hours {
+    font-size: 8.5px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .calendar-cell.has-entry.ahead {
+    background: rgba(30, 142, 90, 0.14);
+    border-color: var(--good);
+    color: var(--good);
+  }
+  .calendar-cell.has-entry.short {
+    background: rgba(240, 196, 138, 0.18);
+    border-color: #F0C48A;
+    color: #9A5A0F;
+  }
+  body.dark-mode .calendar-cell.has-entry.short {
+    color: #F5C77E;
+  }
+  .calendar-cell.today {
+    box-shadow: 0 0 0 2px var(--sky) inset;
+  }
+  .calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .calendar-legend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .calendar-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .calendar-dot.ahead { background: var(--good); }
+  .calendar-dot.short { background: #F0C48A; }
+  .calendar-dot.none { background: var(--line); }
   .modal-upload-btn {
     width: 100%;
     padding: 11px;
@@ -1076,6 +1207,11 @@
         <button class="log-io-btn log-clear-all-btn" id="clearLogBtn" type="button" style="display:none;" aria-label="Clear all logged days">🗑️ Clear All</button>
       </div>
 
+      <div class="log-view-tabs" id="logViewTabs" style="display:none;">
+        <button class="log-tab active" id="tableViewTab" type="button">📋 Table View</button>
+        <button class="log-tab" id="calendarViewTab" type="button" style="display:none;">📅 Calendar View</button>
+      </div>
+
       <div id="logListWrap" style="display:none;">
         <div class="log-list-header">
           <span>Day</span>
@@ -1085,6 +1221,23 @@
           <span></span>
         </div>
         <div id="logEntriesContainer"></div>
+      </div>
+
+      <div id="calendarViewPanel" style="display:none;">
+        <div class="calendar-nav">
+          <button class="calendar-nav-btn" id="calendarPrevBtn" type="button" aria-label="Previous month">‹</button>
+          <span class="calendar-month-label" id="calendarMonthLabel">Month Year</span>
+          <button class="calendar-nav-btn" id="calendarNextBtn" type="button" aria-label="Next month">›</button>
+        </div>
+        <div class="calendar-weekdays">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="calendar-legend">
+          <span><i class="calendar-dot ahead"></i> Ahead / On target</span>
+          <span><i class="calendar-dot short"></i> Short</span>
+          <span><i class="calendar-dot none"></i> No entry</span>
+        </div>
       </div>
 
       <div class="log-summary clear" id="logSummary">Log your daily hours to track your running-late balance automatically.</div>
@@ -1681,6 +1834,7 @@
         logEntries = logEntries.filter(e => e.id !== parseInt(btn.dataset.remove, 10));
         if (logEditingId === parseInt(btn.dataset.remove, 10)) cancelEditLogEntry();
         saveLogEntries();
+        updateCalendarViewVisibility();
         renderLogList();
         calculateLog();
       });
@@ -1730,6 +1884,7 @@
     renderLogList();
     calculateLog();
     saveLogEntries();
+    updateCalendarViewVisibility();
   });
 
   clearLogBtn.addEventListener('click', () => {
@@ -1740,6 +1895,7 @@
     logEntryCount = 0;
     if (logEditingId !== null) cancelEditLogEntry();
     saveLogEntries();
+    updateCalendarViewVisibility();
     renderLogList();
     calculateLog();
   });
@@ -2029,7 +2185,7 @@
 
       const hh = parseInt(timeMatch[1], 10);
       const mm = parseInt(timeMatch[2], 10);
-      lines.push(`${hh}h ${mm}m 0s, ${targetHoursVal}`);
+      lines.push(`${hh}h ${mm}m 0s, ${targetHoursVal}, ${headerLabel}`);
     }
 
     logBulkArea.value = lines.join('\n');
@@ -2041,6 +2197,20 @@
     const skippedNote = skippedDays ? ` (skipped ${skippedDays} holiday/absent/blank day${skippedDays === 1 ? '' : 's'}, no worries, those don't count)` : '';
 
     logBulkFeedback.textContent = `${greeting}found ${lines.length} working day${lines.length === 1 ? '' : 's'} for you${skippedNote}. Take a quick look above, then hit Import when you're ready.`;
+  }
+
+  function parseDateSegment(seg) {
+    let m = seg.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if (m) {
+      const dd = m[1].padStart(2, '0');
+      const mo = m[2].padStart(2, '0');
+      return `${m[3]}-${mo}-${dd}`;
+    }
+    m = seg.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) {
+      return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+    }
+    return null;
   }
 
   function parseBulkLine(line) {
@@ -2064,12 +2234,19 @@
     const ss = sMatch ? parseInt(sMatch[1], 10) : 0;
 
     let target = 8;
-    if (segments.length > 1) {
-      const n = parseInt(segments[1], 10);
-      if (!isNaN(n)) target = n;
+    let date = null;
+    for (let i = 1; i < segments.length; i++) {
+      const seg = segments[i];
+      const parsedDate = parseDateSegment(seg);
+      if (parsedDate) {
+        date = parsedDate;
+        continue;
+      }
+      const n = parseInt(seg, 10);
+      if (!isNaN(n) && /^-?\d{1,2}$/.test(seg)) target = n;
     }
 
-    return { hh, mm, ss, target };
+    return { hh, mm, ss, target, date };
   }
 
   logBulkImportBtn.addEventListener('click', () => {
@@ -2081,7 +2258,7 @@
       const parsed = parseBulkLine(line);
       if (parsed) {
         logEntryCount++;
-        logEntries.push({ id: logEntryCount, hh: parsed.hh, mm: parsed.mm, ss: parsed.ss, target: parsed.target });
+        logEntries.push({ id: logEntryCount, hh: parsed.hh, mm: parsed.mm, ss: parsed.ss, target: parsed.target, date: parsed.date });
         imported++;
       } else if (line.trim() !== '') {
         skipped++;
@@ -2092,12 +2269,133 @@
       saveLogEntries();
       renderLogList();
       calculateLog();
+      updateCalendarViewVisibility();
       closeBulkModal();
     } else {
       logBulkFeedback.className = 'log-paste-feedback error';
       logBulkFeedback.textContent = '⚠️ No valid entries found. Use format: 8h 1m 36s, 8';
     }
   });
+
+  // ---- Table / Calendar Tabs ----
+  const logViewTabs = document.getElementById('logViewTabs');
+  const tableViewTab = document.getElementById('tableViewTab');
+  const calendarViewTab = document.getElementById('calendarViewTab');
+  const calendarViewPanel = document.getElementById('calendarViewPanel');
+  const calendarPrevBtn = document.getElementById('calendarPrevBtn');
+  const calendarNextBtn = document.getElementById('calendarNextBtn');
+  const calendarMonthLabel = document.getElementById('calendarMonthLabel');
+  const calendarGrid = document.getElementById('calendarGrid');
+  let calendarYear = null;
+  let calendarMonth = null;
+  let activeLogView = 'table';
+
+  function updateCalendarViewVisibility() {
+    const hasEntries = logEntries.length > 0;
+    const hasDatedEntries = logEntries.some(e => e.date);
+
+    logViewTabs.style.display = hasEntries ? 'flex' : 'none';
+    calendarViewTab.style.display = hasDatedEntries ? 'block' : 'none';
+
+    // If the calendar tab disappears while active (e.g. all dated entries removed), fall back to table.
+    if (!hasDatedEntries && activeLogView === 'calendar') {
+      switchLogView('table');
+    }
+  }
+
+  function switchLogView(view) {
+    activeLogView = view;
+    const showCalendar = view === 'calendar';
+    tableViewTab.classList.toggle('active', !showCalendar);
+    calendarViewTab.classList.toggle('active', showCalendar);
+    logListWrap.style.display = showCalendar ? 'none' : (logEntries.length ? 'block' : 'none');
+    calendarViewPanel.style.display = showCalendar ? 'block' : 'none';
+    if (showCalendar) {
+      setCalendarToLatestEntryMonth();
+      renderCalendar();
+    }
+  }
+
+  tableViewTab.addEventListener('click', () => switchLogView('table'));
+  calendarViewTab.addEventListener('click', () => switchLogView('calendar'));
+
+  function getEntryStatus(entry) {
+    const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
+    const targetSeconds = entry.target * 3600;
+    return clockedSeconds >= targetSeconds ? 'ahead' : 'short';
+  }
+
+  function formatCellHours(entry) {
+    const parts = [];
+    if (entry.hh > 0) parts.push(`${entry.hh}h`);
+    parts.push(`${entry.mm}m`);
+    return parts.join('');
+  }
+
+  function setCalendarToLatestEntryMonth() {
+    const dated = logEntries.filter(e => e.date).sort((a, b) => a.date.localeCompare(b.date));
+    let refDate = new Date();
+    if (dated.length > 0) {
+      const latest = dated[dated.length - 1].date.split('-').map(Number);
+      refDate = new Date(latest[0], latest[1] - 1, latest[2]);
+    }
+    calendarYear = refDate.getFullYear();
+    calendarMonth = refDate.getMonth();
+  }
+
+  function renderCalendar() {
+    const entriesByDate = {};
+    logEntries.forEach(e => {
+      if (e.date) entriesByDate[e.date] = e;
+    });
+
+    const firstOfMonth = new Date(calendarYear, calendarMonth, 1);
+    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const startWeekday = firstOfMonth.getDay();
+
+    calendarMonthLabel.textContent = firstOfMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+    const today = new Date();
+    const todayISO = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+    calendarGrid.innerHTML = '';
+
+    for (let i = 0; i < startWeekday; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'calendar-cell empty';
+      calendarGrid.appendChild(empty);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const iso = `${calendarYear}-${pad(calendarMonth + 1)}-${pad(day)}`;
+      const cell = document.createElement('div');
+      cell.className = 'calendar-cell';
+      if (iso === todayISO) cell.classList.add('today');
+
+      const entry = entriesByDate[iso];
+      let hoursHtml = '';
+      if (entry) {
+        cell.classList.add('has-entry', getEntryStatus(entry));
+        cell.title = `${pad(entry.hh)}:${pad(entry.mm)}:${pad(entry.ss)} logged (target ${entry.target}h)`;
+        hoursHtml = `<span class="cal-day-hours">${formatCellHours(entry)}</span>`;
+      }
+
+      cell.innerHTML = `<span class="cal-day-num">${day}</span>${hoursHtml}`;
+      calendarGrid.appendChild(cell);
+    }
+  }
+
+  calendarPrevBtn.addEventListener('click', () => {
+    calendarMonth--;
+    if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+    renderCalendar();
+  });
+  calendarNextBtn.addEventListener('click', () => {
+    calendarMonth++;
+    if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+    renderCalendar();
+  });
+
 
 
   function updateCountdown() {
@@ -2339,6 +2637,7 @@
   loadLogEntriesFromStorage();
   renderLogList();
   calculateLog();
+  updateCalendarViewVisibility();
 
   calculate();
 
