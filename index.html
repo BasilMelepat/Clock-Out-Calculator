@@ -51,7 +51,7 @@
   }
   .log-input-card {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
     gap: 12px;
     align-items: end;
     background: var(--sky-light);
@@ -1198,6 +1198,10 @@
           <label>Working Hours</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" id="logTarget" class="log-target-input" value="08">
         </div>
+        <div class="log-input-box">
+          <label>Date (optional)</label>
+          <input type="date" id="logDateInput" class="log-duration-input">
+        </div>
         <button class="log-add-btn" id="addLogEntryBtn" type="button">➕ Add Day</button>
       </div>
 
@@ -1718,6 +1722,7 @@
   const syncEarlyLogBtn = document.getElementById('syncEarlyLogBtn');
   const logDuration = document.getElementById('logDuration');
   const logTarget = document.getElementById('logTarget');
+  const logDateInput = document.getElementById('logDateInput');
   let logEntryCount = 0;
   let logEditingId = null;
   let logEntries = [];
@@ -1789,6 +1794,11 @@
     setTimeout(() => { el.style.borderColor = ''; }, 700);
   }
 
+  function flashSuccess(el) {
+    el.style.borderColor = 'var(--good)';
+    setTimeout(() => { el.style.borderColor = ''; }, 700);
+  }
+
   function formatDiffMinSec(diffSeconds) {
     const sign = diffSeconds < 0 ? '-' : '';
     const abs = Math.abs(diffSeconds);
@@ -1799,10 +1809,18 @@
 
   function renderLogList() {
     logEntriesContainer.innerHTML = '';
-    logListWrap.style.display = logEntries.length ? 'block' : 'none';
+    const shouldShowTable = logEntries.length > 0 && (typeof activeLogView === 'undefined' || activeLogView === 'table');
+    logListWrap.style.display = shouldShowTable ? 'block' : 'none';
     clearLogBtn.style.display = logEntries.length ? 'block' : 'none';
 
-    logEntries.forEach((entry, idx) => {
+    const sortedEntries = logEntries.slice().sort((a, b) => {
+      if (a.date && b.date) return a.date.localeCompare(b.date);
+      if (a.date && !b.date) return -1;
+      if (!a.date && b.date) return 1;
+      return 0;
+    });
+
+    sortedEntries.forEach((entry, idx) => {
       const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
       const targetSeconds = entry.target * 3600;
       const diffSeconds = clockedSeconds - targetSeconds;
@@ -1839,6 +1857,10 @@
         calculateLog();
       });
     });
+
+    if (typeof activeLogView !== 'undefined' && activeLogView === 'calendar' && typeof renderCalendar === 'function') {
+      renderCalendar();
+    }
   }
 
   function startEditLogEntry(id) {
@@ -1847,6 +1869,7 @@
     logEditingId = id;
     logDuration.value = `${entry.hh}h ${entry.mm}m ${entry.ss}s`;
     logTarget.value = pad(entry.target);
+    logDateInput.value = entry.date || '';
     addLogEntryBtn.textContent = 'Update';
     addLogEntryBtn.classList.add('editing');
     logDuration.focus();
@@ -1857,11 +1880,13 @@
     addLogEntryBtn.textContent = '➕ Add Day';
     addLogEntryBtn.classList.remove('editing');
     logDuration.value = '';
+    logDateInput.value = '';
   }
 
   addLogEntryBtn.addEventListener('click', () => {
     const parsed = parseDurationText(logDuration.value);
     const target = parseInt(logTarget.value, 10) || 0;
+    const date = logDateInput.value || null;
 
     if (!parsed) {
       flashInvalid(logDuration);
@@ -1871,13 +1896,26 @@
     if (logEditingId !== null) {
       const entry = logEntries.find(e => e.id === logEditingId);
       if (entry) {
-        entry.hh = parsed.hh; entry.mm = parsed.mm; entry.ss = parsed.ss; entry.target = target;
+        entry.hh = parsed.hh; entry.mm = parsed.mm; entry.ss = parsed.ss; entry.target = target; entry.date = date;
       }
       cancelEditLogEntry();
     } else {
-      logEntryCount++;
-      logEntries.push({ id: logEntryCount, hh: parsed.hh, mm: parsed.mm, ss: parsed.ss, target });
+      const existing = date ? logEntries.find(e => e.date === date) : null;
+
+      if (existing) {
+        const totalSeconds = (existing.hh * 3600 + existing.mm * 60 + existing.ss) + (parsed.hh * 3600 + parsed.mm * 60 + parsed.ss);
+        existing.hh = Math.floor(totalSeconds / 3600);
+        existing.mm = Math.floor((totalSeconds % 3600) / 60);
+        existing.ss = totalSeconds % 60;
+        existing.target = target;
+        flashSuccess(logDuration);
+      } else {
+        logEntryCount++;
+        logEntries.push({ id: logEntryCount, hh: parsed.hh, mm: parsed.mm, ss: parsed.ss, target, date });
+      }
+
       logDuration.value = '';
+      logDateInput.value = '';
       logDuration.focus();
     }
 
@@ -1957,7 +1995,16 @@
       logSyncMode = 'backlog';
     } else if (aheadMin > 0.5) {
       summary.classList.add('clear');
-      summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${formatMinSec(aheadMin)}</b>. No backlog, nice work! You've earned an early departure today.`;
+      const aheadStr = formatMinSec(aheadMin);
+      let message;
+      if (aheadMin >= 480) {
+        message = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${aheadStr}</b>. That's not "ahead of schedule", that's an entire extra shift you apparently didn't need. Go outside. Touch grass. You've earned it.`;
+      } else if (aheadMin >= 240) {
+        message = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${aheadStr}</b>. Either you're incredibly efficient or you've secretly been cloning yourself.`;
+      } else {
+        message = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${aheadStr}</b>. No backlog, nice work! You've earned an early departure today.`;
+      }
+      summary.innerHTML = message;
       syncLogBtn.style.display = 'none';
       syncEarlyLogBtn.style.display = 'block';
       syncEarlyLogBtn.textContent = `🌇 Plan an early Departure (${formatMinSec(aheadMin)})`;
