@@ -51,7 +51,7 @@
   }
   .log-input-card {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 12px;
     align-items: end;
     background: var(--sky-light);
@@ -62,6 +62,10 @@
   .log-input-card.two-col {
     grid-template-columns: 1fr 1fr;
     margin-bottom: 0;
+  }
+  .log-input-card .log-add-btn {
+    grid-column: 1 / -1;
+    margin-top: 2px;
   }
   .log-input-box label {
     display: block;
