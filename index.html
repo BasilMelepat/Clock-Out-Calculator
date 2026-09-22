@@ -840,6 +840,7 @@
     border-radius: 12px;
     border: 1.5px solid var(--line);
     font-size: 13px;
+    font-weight: 500;
     font-family: 'Inter', 'Segoe UI Emoji', Roboto, -apple-system, sans-serif;
     color: var(--ink);
     background: var(--surface);
@@ -946,10 +947,24 @@
     border: 1px solid var(--line);
     position: relative;
     overflow: hidden;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .calendar-cell:not(.empty):hover {
+    transform: scale(1.08);
+    box-shadow: 0 3px 10px rgba(11,42,74,0.18);
+    background: var(--sky-light);
+  }
+  .calendar-cell.has-entry.ahead:hover {
+    background: rgba(30, 142, 90, 0.24);
+  }
+  .calendar-cell.has-entry.short:hover {
+    background: rgba(240, 196, 138, 0.3);
   }
   .calendar-cell.empty {
     background: transparent;
     border: none;
+    cursor: default;
   }
   .calendar-cell .cal-day-num {
     line-height: 1;
@@ -2427,11 +2442,23 @@
       let hoursHtml = '';
       if (entry) {
         cell.classList.add('has-entry', getEntryStatus(entry));
-        cell.title = `${pad(entry.hh)}:${pad(entry.mm)}:${pad(entry.ss)} logged (target ${entry.target}h)`;
+        cell.title = `${pad(entry.hh)}:${pad(entry.mm)}:${pad(entry.ss)} logged (target ${entry.target}h). Click to edit.`;
         hoursHtml = `<span class="cal-day-hours">${formatCellHours(entry)}</span>`;
+      } else {
+        cell.title = 'Click to add an entry for this day';
       }
 
       cell.innerHTML = `<span class="cal-day-num">${day}</span>${hoursHtml}`;
+      cell.addEventListener('click', () => {
+        if (entry) {
+          startEditLogEntry(entry.id);
+        } else {
+          cancelEditLogEntry();
+          logDateInput.value = iso;
+          logDuration.value = '';
+          logDuration.focus();
+        }
+      });
       calendarGrid.appendChild(cell);
     }
   }
