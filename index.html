@@ -20,6 +20,7 @@
     --good: #1E8E5A;
     --card: #FFFFFF;
     --surface: #FCFEFF;
+    --header-bg: rgba(234, 244, 252, 0.68); /* translucent version of --sky-light, for the blurred sticky header */
   }
   body.dark-mode {
     --deep: #E8F1FA;
@@ -32,6 +33,7 @@
     --good: #3ED08A;
     --card: #101E30;
     --surface: #16283D;
+    --header-bg: rgba(11, 22, 34, 0.68); /* translucent version of the dark gradient's start stop */
   }
   @keyframes slideDown {
     from { opacity: 0; max-height: 0; transform: translateY(-6px); }
@@ -51,7 +53,11 @@
   }
   .log-input-card {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    /* Hours Clocked and Target Hours share a row; Date gets its own full
+       width row below (via .log-date-box) instead of squeezing into a third
+       column — the native date input's calendar UI needs more room than any
+       fixed fraction of a 3-column split can reliably give it. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     align-items: end;
     background: var(--sky-light);
@@ -60,12 +66,37 @@
     margin-bottom: 14px;
   }
   .log-input-card.two-col {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-bottom: 0;
   }
   .log-input-card .log-add-btn {
     grid-column: 1 / -1;
     margin-top: 2px;
+  }
+  .log-input-box {
+    /* Grid items default to min-width: auto, which stops them shrinking
+       below their content's intrinsic size — override so the equal
+       minmax(0, 1fr) column widths above actually apply. */
+    min-width: 0;
+    position: relative;
+  }
+  .log-date-box {
+    grid-column: 1 / -1;
+  }
+  #logTarget {
+    padding-right: 38px;
+  }
+  #targetHours {
+    padding-right: 38px;
+  }
+  .log-input-box .input-suffix {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    pointer-events: none;
   }
   .log-input-box label {
     display: block;
@@ -73,6 +104,9 @@
     color: var(--muted);
     margin-bottom: 6px;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .log-duration-input,
   .log-target-input {
@@ -81,7 +115,7 @@
     border-radius: 10px;
     border: 1.5px solid var(--line);
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 400;
     color: var(--ink);
     background: var(--surface);
     outline: none;
@@ -90,10 +124,6 @@
   .log-duration-input:focus,
   .log-target-input:focus { border-color: var(--sky); }
   .log-duration-input::placeholder { color: #9FB4C7; font-weight: 500; }
-  .shift-details-inputs .log-duration-input,
-  .shift-details-inputs .log-target-input {
-    font-weight: 400;
-  }
   .log-add-btn {
     display: flex;
     align-items: center;
@@ -101,16 +131,16 @@
     gap: 6px;
     padding: 10px 12px;
     border-radius: 10px;
-    border: 1.5px dashed var(--sky);
-    background: transparent;
+    border: 1.5px solid var(--sky);
+    background: var(--surface);
     color: var(--deep2);
     font-weight: 700;
     font-size: 13.5px;
     cursor: pointer;
-    transition: background .15s;
+    transition: background .15s, color .15s;
     white-space: nowrap;
   }
-  .log-add-btn:hover { background: var(--surface); }
+  .log-add-btn:hover { background: var(--sky); color: #fff; }
   .log-add-btn.editing {
     background: var(--sky);
     color: #fff;
@@ -217,6 +247,13 @@
   }
   .sync-btn.early-sync-btn:hover { background: #E4F8ED; }
   * { box-sizing: border-box; }
+  /* Form controls don't inherit the page font by default in most browsers —
+     force them all to match, and give every field the same weight, so time/
+     number/text/select fields all read consistently. */
+  input, select, textarea, button {
+    font-family: inherit;
+    font-weight: 400;
+  }
   body {
     margin: 0;
     font-family: 'Inter', 'Segoe UI Emoji', Roboto, -apple-system, sans-serif;
@@ -240,12 +277,30 @@
     align-items: center;
     justify-content: space-between;
     padding: 4px 4px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    flex: none;
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
   }
   .app-header-title {
     font-size: 20px;
     font-weight: 800;
     color: var(--deep);
     transition: color 0.3s ease;
+  }
+  .version-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--sky);
+    background: var(--sky-light);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 7px;
+    margin-left: 7px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
   }
   .theme-toggle-btn {
     width: 42px;
@@ -271,6 +326,31 @@
     align-items: start;
   }
   .col { display: flex; flex-direction: column; gap: 16px; }
+  /* Desktop (the true 3-side-by-side-sections layout): each column scrolls
+     on its own instead of the whole page scrolling together, and the
+     scrollbar is hidden while the scroll itself still works (wheel,
+     trackpad, keyboard, touch). Scoped to this breakpoint only — at
+     narrower widths the layout stacks, where normal whole-page scrolling
+     is what you want. */
+  @media (min-width: 1101px) {
+    body {
+      height: 100vh;
+      overflow: hidden;
+    }
+    .wrap {
+      flex: 1 1 auto;
+      min-height: 0;
+      align-items: stretch;
+    }
+    .col {
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;      /* Firefox */
+      -ms-overflow-style: none;   /* legacy Edge/IE */
+    }
+    .col::-webkit-scrollbar { width: 0; height: 0; }  /* Chrome/Safari/Edge */
+  }
   @media (max-width: 1100px) {
     .wrap { grid-template-columns: 1fr 1fr; max-width: 900px; }
     .col3 { grid-column: 1 / -1; }
@@ -353,6 +433,7 @@
     border-radius: 10px;
     border: 1.5px solid var(--line);
     font-size: 15px;
+    font-weight: 400;
     color: var(--ink);
     background: var(--surface);
     outline: none;
@@ -375,6 +456,16 @@
     position: relative;
   }
   .break-item .row { margin-bottom: 0; }
+  .break-item.overlap {
+    border-color: #E0453C;
+    background: rgba(224,69,60,0.08);
+  }
+  .break-overlap-msg {
+    margin-top: 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #C0392B;
+  }
   .break-label {
     font-size: 12px;
     font-weight: 700;
@@ -409,15 +500,15 @@
     width: 100%;
     padding: 10px;
     border-radius: 10px;
-    border: 1.5px dashed var(--sky);
-    background: transparent;
+    border: 1.5px solid var(--sky);
+    background: var(--surface);
     color: var(--deep2);
     font-weight: 700;
     font-size: 13.5px;
     cursor: pointer;
-    transition: background .15s;
+    transition: background .15s, color .15s;
   }
-  .add-btn:hover { background: var(--sky-light); }
+  .add-btn:hover { background: var(--sky); color: #fff; }
   @keyframes gradientFlow {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -539,10 +630,14 @@
     padding-top: 14px;
     border-top: 1px solid rgba(255,255,255,0.15);
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
+    row-gap: 6px;
+    column-gap: 12px;
     font-size: 12.5px;
     color: #C9DDEF;
   }
+  .breakdown span { white-space: nowrap; }
   .breakdown b { color: #fff; perspective: 160px; }
   .error {
     text-align: center;
@@ -612,10 +707,14 @@
     padding-top: 14px;
     border-top: 1px solid var(--line);
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
+    row-gap: 6px;
+    column-gap: 12px;
     font-size: 12.5px;
     color: var(--muted);
   }
+  .worked-row span { white-space: nowrap; }
   .worked-row b {
     color: var(--deep);
     font-variant-numeric: tabular-nums;
@@ -667,10 +766,10 @@
     border-radius: 10px;
     border: 1.5px solid var(--line);
     font-size: 14px;
+    font-weight: 400;
     color: var(--ink);
     background: var(--surface);
     outline: none;
-    font-family: inherit;
     resize: vertical;
     transition: border-color .15s;
   }
@@ -840,8 +939,7 @@
     border-radius: 12px;
     border: 1.5px solid var(--line);
     font-size: 13px;
-    font-weight: 500;
-    font-family: 'Inter', 'Segoe UI Emoji', Roboto, -apple-system, sans-serif;
+    font-weight: 400;
     color: var(--ink);
     background: var(--surface);
     resize: vertical;
@@ -1039,7 +1137,7 @@
     border-radius: 10px;
     border: 1.5px solid var(--line);
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 400;
     color: var(--ink);
     background: var(--surface);
     margin-bottom: 12px;
@@ -1188,7 +1286,7 @@
 </head>
 <body>
 <header class="app-header">
-  <span class="app-header-title">⏰ Clock me Out</span>
+  <span class="app-header-title">⏰ Clock me Out<span class="version-badge">v2.150</span></span>
   <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
 </header>
 <script>
@@ -1210,15 +1308,16 @@
       <div id="dailyLogBody">
       <div class="log-input-card">
         <div class="log-input-box">
-          <label>Hours Clocked</label>
+          <label for="logDuration">Hours Clocked</label>
           <input type="text" id="logDuration" class="log-duration-input" placeholder="0h 0m 0s">
         </div>
         <div class="log-input-box">
-          <label>Working Hours</label>
-          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" id="logTarget" class="log-target-input" value="08">
+          <label for="logTarget">Target Hours</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" id="logTarget" class="log-target-input" value="8">
+          <span class="input-suffix">hrs</span>
         </div>
-        <div class="log-input-box">
-          <label>Date (optional)</label>
+        <div class="log-input-box log-date-box">
+          <label for="logDateInput">Date (optional)</label>
           <input type="date" id="logDateInput" class="log-duration-input">
         </div>
         <button class="log-add-btn" id="addLogEntryBtn" type="button">➕ Add Day</button>
@@ -1282,8 +1381,9 @@
           <input type="time" id="clockIn" value="09:30" class="log-duration-input">
         </div>
         <div class="log-input-box">
-          <label for="targetHours">Working Hours</label>
-          <input type="number" id="targetHours" value="8" min="0" step="0.25" class="log-target-input">
+          <label for="targetHours">Target Hours</label>
+          <input type="text" inputmode="decimal" id="targetHours" value="8" class="log-target-input">
+          <span class="input-suffix">hrs</span>
         </div>
       </div>
     </div>
@@ -1411,8 +1511,8 @@
     <button id="logBulkUploadBtn" class="modal-upload-btn" type="button">📎 Upload Attendance Excel (.xlsx)</button>
     <input type="file" id="logBulkFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
     <select id="logBulkEmployeeSelect" class="modal-employee-select" style="display:none;"></select>
-    <textarea id="logBulkArea" class="modal-textarea" placeholder="00h 00m 00s, 08&#10;00h 00m 00s, 08&#10;00h 00m 00s, 08"></textarea>
-    <div class="modal-hint">One entry per line: <b>Xh Ym Zs, Target</b> (comma or tab separated). Any part (h/m/s) can be omitted.</div>
+    <textarea id="logBulkArea" class="modal-textarea" placeholder="0h 0m 0s, 8, dd-mm-yyyy&#10;0h 0m 0s, 8, dd-mm-yyyy&#10;0h 0m 0s, 8, dd-mm-yyyy"></textarea>
+    <div class="modal-hint">One entry per line: <b>Xh Ym Zs, Target, dd-mm-yyyy</b> (comma or tab separated). Target and date are optional; any part (h/m/s) can be omitted.</div>
     <div class="log-paste-feedback" id="logBulkFeedback"></div>
     <button id="logBulkImportBtn" class="modal-import-btn" type="button">Import</button>
   </div>
@@ -1446,17 +1546,26 @@
     const div = document.createElement('div');
     div.className = 'break-item';
     div.dataset.id = id;
+
+    // Default a new break to "now" through "now + 15 minutes" instead of a
+    // fixed 1:00 PM placeholder, so it reflects when the break is actually
+    // being taken. Explicit start/end (e.g. restoring saved breaks) still win.
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const defaultStart = minutesToInputTime(nowMin);
+    const defaultEnd = minutesToInputTime(nowMin + 15);
+
     div.innerHTML = `
       <button class="remove-btn" data-remove="${id}" aria-label="Remove this break">❌</button>
       <div class="break-label"><span class="break-label-text">${emoji} Break ${id}</span><span class="break-duration" data-duration="${id}">--</span></div>
       <div class="row">
         <div>
           <label>Start Time</label>
-          <input type="time" class="break-start" value="${start || '13:00'}">
+          <input type="time" class="break-start" value="${start || defaultStart}">
         </div>
         <div>
           <label>End Time</label>
-          <input type="time" class="break-end" value="${end || '13:30'}">
+          <input type="time" class="break-end" value="${end || defaultEnd}">
         </div>
       </div>
     `;
@@ -1490,6 +1599,67 @@
     let eMin = toMinutes(e);
     if (eMin < sMin) eMin += 1440;
     durationEl.textContent = formatDuration(eMin - sMin);
+  }
+
+  // Flags break-items whose time ranges are identical or overlap, so the
+  // person notices and fixes them, and returns the actual (non-double-
+  // counted) total break minutes by merging overlapping ranges.
+  function getBreakRanges() {
+    const ranges = [];
+    breaksContainer.querySelectorAll('.break-item').forEach(item => {
+      const s = item.querySelector('.break-start').value;
+      const e = item.querySelector('.break-end').value;
+      if (s && e) {
+        const sMin = toMinutes(s);
+        let eMin = toMinutes(e);
+        if (eMin < sMin) eMin += 1440;
+        ranges.push({ item, sMin, eMin });
+      }
+    });
+    return ranges;
+  }
+
+  function updateBreakOverlaps(ranges) {
+    ranges.forEach(r => {
+      r.item.classList.remove('overlap');
+      const msg = r.item.querySelector('.break-overlap-msg');
+      if (msg) msg.remove();
+    });
+
+    const overlapping = new Set();
+    for (let i = 0; i < ranges.length; i++) {
+      for (let j = i + 1; j < ranges.length; j++) {
+        const a = ranges[i], b = ranges[j];
+        if (a.sMin < b.eMin && a.eMin > b.sMin) {
+          overlapping.add(a);
+          overlapping.add(b);
+        }
+      }
+    }
+
+    overlapping.forEach(r => {
+      r.item.classList.add('overlap');
+      const msg = document.createElement('div');
+      msg.className = 'break-overlap-msg';
+      msg.textContent = '⚠️ Overlaps with another break — adjust the times above';
+      r.item.appendChild(msg);
+    });
+
+    if (ranges.length === 0) return 0;
+    const sorted = ranges.map(r => [r.sMin, r.eMin]).sort((a, b) => a[0] - b[0]);
+    let total = 0;
+    let [curS, curE] = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+      const [s, e] = sorted[i];
+      if (s <= curE) {
+        curE = Math.max(curE, e);
+      } else {
+        total += curE - curS;
+        [curS, curE] = [s, e];
+      }
+    }
+    total += curE - curS;
+    return total;
   }
 
   function renumber() {
@@ -1530,6 +1700,14 @@
     return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
   }
 
+  // 24-hour "HH:MM" string suitable for an <input type="time"> value.
+  function minutesToInputTime(mins) {
+    mins = ((mins % 1440) + 1440) % 1440;
+    const h = Math.floor(mins / 60);
+    const m = Math.round(mins % 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
   function formatDuration(mins) {
     const h = Math.floor(mins / 60);
     const m = Math.round(mins % 60);
@@ -1544,7 +1722,11 @@
     opts = opts || {};
     const charClass = opts.charClass || 'flip-char';
     const animClass = opts.animClass || 'flip-anim';
-    const chars = text.split('');
+    // A plain space as the sole content of a display:inline-block span
+    // collapses to zero width (same reason `<div> </div>` renders empty),
+    // which is why e.g. "Not taken" was rendering as "Nottaken". A
+    // non-breaking space isn't subject to that collapsing.
+    const chars = text.split('').map(c => (c === ' ' ? '\u00A0' : c));
 
     if (!el._flipSpans || el._flipSpans.length !== chars.length) {
       el.innerHTML = '';
@@ -1587,27 +1769,56 @@
     lateSectionActive: false
   };
 
+  // Cache DOM nodes that are queried on every calculate()/tick call instead of
+  // re-running getElementById on every keystroke and every 1s interval tick.
+  const el = {
+    clockIn: document.getElementById('clockIn'),
+    targetHours: document.getElementById('targetHours'),
+    lateMinutes: document.getElementById('lateMinutes'),
+    lateSeconds: document.getElementById('lateSeconds'),
+    lateIncludeToggle: document.getElementById('lateIncludeToggle'),
+    resultDetail: document.getElementById('resultDetail'),
+    clockOutTime: document.getElementById('clockOutTime'),
+    workHoursOut: document.getElementById('workHoursOut'),
+    breakHoursOut: document.getElementById('breakHoursOut'),
+    clockOutDateNote: document.getElementById('clockOutDateNote'),
+    countdownTime: document.getElementById('countdownTime'),
+    countdownSub: document.getElementById('countdownSub'),
+    elapsedOut: document.getElementById('elapsedOut'),
+    totalHoursOut: document.getElementById('totalHoursOut'),
+    resultCard: document.getElementById('resultCard'),
+    progressFill: document.getElementById('progressFill'),
+    progressPct: document.getElementById('progressPct'),
+    earlyResult: document.getElementById('earlyResult'),
+    earlyTime: document.getElementById('earlyTime'),
+    earlyCountdownWrap: document.getElementById('earlyCountdownWrap'),
+    earlyCountdownTime: document.getElementById('earlyCountdownTime'),
+    earlyCountdownSub: document.getElementById('earlyCountdownSub')
+  };
+
   function calculate() {
-    const clockIn = document.getElementById('clockIn').value;
-    const targetHours = parseFloat(document.getElementById('targetHours').value) || 0;
-    const lateMinutes = parseFloat(document.getElementById('lateMinutes').value) || 0;
-    const lateSeconds = parseFloat(document.getElementById('lateSeconds').value) || 0;
+    const clockIn = el.clockIn.value;
+    const targetHours = parseFloat(el.targetHours.value) || 0;
+    const lateMinutes = parseFloat(el.lateMinutes.value) || 0;
+    const lateSeconds = parseFloat(el.lateSeconds.value) || 0;
     const rawBacklogMin = Math.max(0, lateMinutes + lateSeconds / 60);
-    const includeLate = document.getElementById('lateIncludeToggle').checked;
+    const includeLate = el.lateIncludeToggle.checked;
     const backlogMin = (includeLate && state.lateSectionActive) ? rawBacklogMin : 0;
-    const errorEl = document.getElementById('resultDetail');
-    const timeEl = document.getElementById('clockOutTime');
-    const workOut = document.getElementById('workHoursOut');
-    const breakOut = document.getElementById('breakHoursOut');
+    const errorEl = el.resultDetail;
+    const timeEl = el.clockOutTime;
+    const workOut = el.workHoursOut;
+    const breakOut = el.breakHoursOut;
 
     if (!clockIn) {
       renderFlipTime(timeEl, '--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
       errorEl.textContent = '👇 Please enter your clock-in time';
       renderFlipTime(workOut, '--');
       renderFlipTime(breakOut, '--');
-      document.getElementById('clockOutDateNote').style.display = 'none';
+      el.clockOutDateNote.style.display = 'none';
       state.clockInDate = null;
       state.clockOutDate = null;
+      const earlyRanges = getBreakRanges();
+      updateBreakOverlaps(earlyRanges);
       updateCountdown();
       calculateEarlyPlan();
       updateLateMotivation(rawBacklogMin, includeLate, targetHours, null);
@@ -1615,18 +1826,7 @@
     }
 
     const clockInMin = toMinutes(clockIn);
-    let totalBreakMin = 0;
-
-    breaksContainer.querySelectorAll('.break-item').forEach(item => {
-      const s = item.querySelector('.break-start').value;
-      const e = item.querySelector('.break-end').value;
-      if (s && e) {
-        const sMin = toMinutes(s);
-        let eMin = toMinutes(e);
-        if (eMin < sMin) eMin += 1440;
-        totalBreakMin += (eMin - sMin);
-      }
-    });
+    const totalBreakMin = updateBreakOverlaps(getBreakRanges());
 
     const baseTargetMin = targetHours * 60;
     const targetWorkMin = baseTargetMin + backlogMin;
@@ -1644,7 +1844,7 @@
     renderFlipTime(workOut, formatDuration(targetWorkMin));
     renderFlipTime(breakOut, totalBreakMin > 0 ? formatDuration(totalBreakMin) : 'Not taken');
 
-    const dateNoteEl = document.getElementById('clockOutDateNote');
+    const dateNoteEl = el.clockOutDateNote;
     const daysAhead = Math.floor(clockOutMin / 1440);
     if (daysAhead >= 1) {
       if (clockOutDate.getFullYear() > 2999) {
@@ -1768,9 +1968,28 @@
     } catch (e) { /* corrupt or unavailable storage, start fresh */ }
   }
 
-  const SHIFT_STATE_TTL_MS = 24 * 60 * 60 * 1000;
+  // Saved shift state should reset at midnight (a new calendar day), not on a
+  // rolling 24h timer from when it was saved — otherwise state saved at, say,
+  // 6 PM would still be "valid" at 5 PM the next day.
+  function localDateKey(date) {
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  }
 
-  function saveShiftState() {
+  // Small debounce helper: several inputs (clock-in, target hours, each break
+  // field) call saveShiftState() on every keystroke, which used to run a
+  // JSON.stringify + localStorage.setItem synchronously per keypress. Wrapping
+  // the actual save so it fires once shortly after typing settles avoids that
+  // per-keystroke I/O without changing when data actually gets persisted from
+  // the user's point of view.
+  function debounce(fn, delay) {
+    let timer = null;
+    return function debounced(...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+  }
+
+  function saveShiftStateNow() {
     try {
       const breaks = [];
       breaksContainer.querySelectorAll('.break-item').forEach(item => {
@@ -1789,13 +2008,15 @@
     } catch (e) { /* storage unavailable, fail silently */ }
   }
 
+  const saveShiftState = debounce(saveShiftStateNow, 400);
+
   function loadShiftStateFromStorage() {
     try {
       const saved = localStorage.getItem('cmoShiftState');
       if (!saved) return;
       const state = JSON.parse(saved);
       if (!state || typeof state.savedAt !== 'number') return;
-      if (Date.now() - state.savedAt >= SHIFT_STATE_TTL_MS) {
+      if (localDateKey(new Date(state.savedAt)) !== localDateKey(new Date())) {
         localStorage.removeItem('cmoShiftState');
         return;
       }
@@ -1817,27 +2038,24 @@
     if (v > max) v = max;
     el.value = String(v);
   }
-  function padOnBlur(el) {
-    if (el.value === '') return;
-    const v = parseInt(el.value, 10);
-    if (!isNaN(v)) el.value = pad(v);
-  }
-  function enableArrowKeyStep(el, min, max) {
+  function enableArrowKeyStep(el, min, max, step) {
+    step = step || 1;
     el.addEventListener('keydown', (e) => {
       if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
       e.preventDefault();
-      let v = parseInt(el.value, 10);
+      let v = parseFloat(el.value);
       if (isNaN(v)) v = 0;
-      v += (e.key === 'ArrowUp') ? 1 : -1;
+      v += (e.key === 'ArrowUp') ? step : -step;
       if (v < min) v = min;
       if (v > max) v = max;
+      v = Math.round(v * 100) / 100; // avoid float artifacts like 8.300000000000001
       el.value = String(v);
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
   }
   logTarget.addEventListener('input', () => clampField(logTarget, 99));
-  logTarget.addEventListener('blur', () => padOnBlur(logTarget));
   enableArrowKeyStep(logTarget, 0, 99);
+  enableArrowKeyStep(document.getElementById('targetHours'), 0, 99, 0.25);
 
   function parseDurationText(text) {
     const clean = (text || '').trim();
@@ -2002,26 +2220,26 @@
     calculateLog();
   });
 
+  // Single pass over logEntries producing the total clocked-vs-target diff in
+  // seconds. getDailyLogBacklogMin/getDailyLogAheadMin/calculateLog/the sync
+  // handlers all previously ran their own identical forEach over the same
+  // array; they now share this one computation.
+  function getLogDiffSeconds() {
+    let totalDiffSeconds = 0;
+    for (const entry of logEntries) {
+      totalDiffSeconds += (entry.hh * 3600 + entry.mm * 60 + entry.ss) - (entry.target * 3600);
+    }
+    return totalDiffSeconds;
+  }
+
   function getDailyLogBacklogMin() {
     if (logEntries.length === 0) return 0;
-    let totalDiffSeconds = 0;
-    logEntries.forEach(entry => {
-      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
-      const targetSeconds = entry.target * 3600;
-      totalDiffSeconds += (clockedSeconds - targetSeconds);
-    });
-    return Math.max(0, -totalDiffSeconds / 60);
+    return Math.max(0, -getLogDiffSeconds() / 60);
   }
 
   function getDailyLogAheadMin() {
     if (logEntries.length === 0) return 0;
-    let totalDiffSeconds = 0;
-    logEntries.forEach(entry => {
-      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
-      const targetSeconds = entry.target * 3600;
-      totalDiffSeconds += (clockedSeconds - targetSeconds);
-    });
-    return Math.max(0, totalDiffSeconds / 60);
+    return Math.max(0, getLogDiffSeconds() / 60);
   }
 
   let logSyncMode = null;
@@ -2039,13 +2257,7 @@
       return;
     }
 
-    let totalDiffSeconds = 0;
-    logEntries.forEach(entry => {
-      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
-      const targetSeconds = entry.target * 3600;
-      totalDiffSeconds += (clockedSeconds - targetSeconds);
-    });
-
+    const totalDiffSeconds = getLogDiffSeconds();
     const backlogMin = Math.max(0, -totalDiffSeconds / 60);
     const aheadMin = Math.max(0, totalDiffSeconds / 60);
     const count = logEntries.length;
@@ -2085,36 +2297,23 @@
   syncLogBtn.addEventListener('click', () => {
     if (logSyncMode !== 'backlog') return;
 
-    let totalDiffSeconds = 0;
-    logEntries.forEach(entry => {
-      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
-      const targetSeconds = entry.target * 3600;
-      totalDiffSeconds += (clockedSeconds - targetSeconds);
-    });
-
-    const backlogMin = Math.max(0, -totalDiffSeconds / 60);
+    const backlogMin = Math.max(0, -getLogDiffSeconds() / 60);
     const wholeMin = Math.floor(backlogMin);
     const secs = Math.round((backlogMin - wholeMin) * 60);
 
     if (!state.lateSectionActive) {
       document.getElementById('addLatePlanBtn').click();
     }
-    document.getElementById('lateMinutes').value = wholeMin;
-    document.getElementById('lateSeconds').value = secs;
-    document.getElementById('lateIncludeToggle').checked = true;
+    el.lateMinutes.value = wholeMin;
+    el.lateSeconds.value = secs;
+    el.lateIncludeToggle.checked = true;
     calculate();
   });
 
   syncEarlyLogBtn.addEventListener('click', () => {
     if (logSyncMode !== 'ahead') return;
 
-    let totalDiffSeconds = 0;
-    logEntries.forEach(entry => {
-      const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
-      const targetSeconds = entry.target * 3600;
-      totalDiffSeconds += (clockedSeconds - targetSeconds);
-    });
-    const aheadMin = Math.max(0, totalDiffSeconds / 60);
+    const aheadMin = Math.max(0, getLogDiffSeconds() / 60);
 
     if (!state.clockOutDate) {
       calculate();
@@ -2128,7 +2327,7 @@
     if (earlyPlannerBody.style.display !== 'block') {
       addEarlyPlanBtn.click();
     }
-    document.getElementById('earlyTime').value = suggestedTime;
+    el.earlyTime.value = suggestedTime;
     calculateEarlyPlan();
   });
 
@@ -2146,7 +2345,14 @@
       if (entry.hh > 0) parts.push(`${entry.hh}h`);
       parts.push(`${entry.mm}m`);
       parts.push(`${entry.ss}s`);
-      return `${parts.join(' ')}, ${entry.target}`;
+      let line = `${parts.join(' ')}, ${entry.target}`;
+      if (entry.date) {
+        // Stored as YYYY-MM-DD; output as dd-mm-yyyy to match the bulk
+        // import format so a copied log can be pasted straight back in.
+        const [y, m, d] = entry.date.split('-');
+        line += `, ${d}-${m}-${y}`;
+      }
+      return line;
     });
     const text = lines.join('\n');
 
@@ -2522,11 +2728,11 @@
 
 
   function updateCountdown() {
-    const countdownTime = document.getElementById('countdownTime');
-    const countdownSub = document.getElementById('countdownSub');
-    const elapsedOut = document.getElementById('elapsedOut');
-    const totalHoursOut = document.getElementById('totalHoursOut');
-    const resultCard = document.getElementById('resultCard');
+    const countdownTime = el.countdownTime;
+    const countdownSub = el.countdownSub;
+    const elapsedOut = el.elapsedOut;
+    const totalHoursOut = el.totalHoursOut;
+    const resultCard = el.resultCard;
 
     if (!state.clockInDate || !state.clockOutDate) {
       renderFlipTime(countdownTime, '--:--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
@@ -2535,9 +2741,9 @@
       renderFlipTime(elapsedOut, '--:--:--');
       renderFlipTime(totalHoursOut, '--');
       resultCard.classList.remove('exceeded');
-      document.getElementById('progressFill').style.width = '0%';
-      document.getElementById('progressFill').classList.remove('complete');
-      document.getElementById('progressPct').textContent = '0%';
+      el.progressFill.style.width = '0%';
+      el.progressFill.classList.remove('complete');
+      el.progressPct.textContent = '0%';
       return;
     }
 
@@ -2579,8 +2785,8 @@
     // Progress bar: elapsed vs total session duration (work + breaks)
     const totalSessionSec = Math.max(1, (state.clockOutDate - state.clockInDate) / 1000);
     const progressRatio = Math.min(1, elapsedSec / totalSessionSec);
-    const progressFill = document.getElementById('progressFill');
-    const progressPct = document.getElementById('progressPct');
+    const progressFill = el.progressFill;
+    const progressPct = el.progressPct;
     progressFill.style.width = `${(progressRatio * 100).toFixed(1)}%`;
     progressPct.textContent = `${Math.round(progressRatio * 100)}%`;
     if (remainingSec <= 0) {
@@ -2627,34 +2833,35 @@
   });
 
   function calculateEarlyPlan() {
-    const earlyResult = document.getElementById('earlyResult');
-    const earlyTime = document.getElementById('earlyTime').value;
+    const earlyResult = el.earlyResult;
+    const earlyTime = el.earlyTime.value;
 
     earlyResult.classList.remove('short', 'ontrack');
 
     if (!earlyTime) {
       earlyResult.textContent = "Enter a time above to see the projected impact on your hours.";
       state.earlyDepartureDate = null;
-      document.getElementById('earlyCountdownWrap').style.display = 'none';
+      el.earlyCountdownWrap.style.display = 'none';
       updateEarlyCountdown();
       return;
     }
     if (!state.clockInDate) {
       earlyResult.textContent = "Please enter your clock-in time first.";
       state.earlyDepartureDate = null;
-      document.getElementById('earlyCountdownWrap').style.display = 'none';
+      el.earlyCountdownWrap.style.display = 'none';
       updateEarlyCountdown();
       return;
     }
 
     const earlyMin = toMinutes(earlyTime);
-    const clockInMin = toMinutes(document.getElementById('clockIn').value);
+    const clockInMin = toMinutes(el.clockIn.value);
     let earlyTotalMin = earlyMin - clockInMin;
     if (earlyTotalMin < 0) earlyTotalMin += 1440;
 
     const actualWorkMin = Math.max(0, earlyTotalMin - state.totalBreakMin);
-    const dailyLogBacklogMin = getDailyLogBacklogMin();
-    const dailyLogAheadMin = getDailyLogAheadMin();
+    const logDiffSeconds = logEntries.length ? getLogDiffSeconds() : 0;
+    const dailyLogBacklogMin = Math.max(0, -logDiffSeconds / 60);
+    const dailyLogAheadMin = Math.max(0, logDiffSeconds / 60);
     const targetMin = state.targetWorkMin + dailyLogBacklogMin;
     const diffMin = actualWorkMin - targetMin;
     const netDiffMin = diffMin + dailyLogAheadMin;
@@ -2703,13 +2910,13 @@
       departureDate.setDate(departureDate.getDate() + 1);
     }
     state.earlyDepartureDate = departureDate;
-    document.getElementById('earlyCountdownWrap').style.display = 'block';
+    el.earlyCountdownWrap.style.display = 'block';
     updateEarlyCountdown();
   }
 
   function updateEarlyCountdown() {
-    const timeEl = document.getElementById('earlyCountdownTime');
-    const subEl = document.getElementById('earlyCountdownSub');
+    const timeEl = el.earlyCountdownTime;
+    const subEl = el.earlyCountdownSub;
 
     if (!state.earlyDepartureDate) {
       renderFlipTime(timeEl, '--:--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
