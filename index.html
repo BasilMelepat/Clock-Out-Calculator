@@ -341,6 +341,14 @@
       flex: 1 1 auto;
       min-height: 0;
       align-items: stretch;
+      /* Without an explicit row track, a grid's implicit row defaults to
+         "auto" sizing, which grows to fit its tallest column's own content
+         (the actual bug here) instead of respecting .wrap's own resolved
+         flex height — even with align-items: stretch and min-height: 0 on
+         the columns. Pinning the row to .wrap's height is what actually
+         lets a taller column's overflow scroll instead of spilling past
+         the viewport with nothing to scroll it. */
+      grid-template-rows: minmax(0, 1fr);
     }
     .col {
       min-height: 0;
@@ -525,6 +533,11 @@
   .result {
     position: relative;
     overflow: hidden;
+    /* .col is a flex column and this card has overflow: hidden (min-height
+       auto resolves to 0), so it could get squeezed and clip its own
+       content — keep a floor and don't let it shrink. */
+    min-height: 206px;
+    flex-shrink: 0;
     background: linear-gradient(120deg, #0B2A4A 0%, #0F3A63 45%, #0B2A4A 100%);
     background-size: 220% 220%;
     animation: sectionEntrance 0.55s ease both, gradientFlow 10s ease infinite;
@@ -1282,11 +1295,19 @@
     margin-top: 24px;
     padding-bottom: 4px;
   }
+  /* Two copies of the footer, swapped purely by CSS: desktop shows the one
+     inside the Shift Details column (under Clock-Out Time); when the columns
+     stack (<=1100px) the page-level one after .wrap shows instead. */
+  .footer-stacked { display: none; }
+  @media (max-width: 1100px) {
+    .footer-desktop { display: none; }
+    .footer-stacked { display: block; }
+  }
 </style>
 </head>
 <body>
 <header class="app-header">
-  <span class="app-header-title">⏰ Clock me Out<span class="version-badge">v2.150</span></span>
+  <span class="app-header-title">⏰ Clock me Out<span class="version-badge">v2.166</span></span>
   <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
 </header>
 <script>
@@ -1435,7 +1456,7 @@
         <span>☕ Break Time: <b id="breakHoursOut">--</b></span>
       </div>
     </div>
-    <div id="footerAnchor"></div>
+    <div class="app-footer footer-desktop">© 2026 Basil Melepat · Designed for You</div>
   </div>
 
   <div class="col">
@@ -1500,7 +1521,7 @@
   </div>
 </div>
 
-<div class="app-footer" id="appFooter">© 2026 Basil Melepat · Designed for You</div>
+<div class="app-footer footer-stacked">© 2026 Basil Melepat · Designed for You</div>
 
 <div class="modal-overlay" id="logBulkOverlay" style="display:none;">
   <div class="modal-box">
@@ -2983,20 +3004,32 @@
     updateEarlyCountdown();
   }, 1000);
 
-  // Move the footer below Clock-Out Time when all 3 columns are visible side by side,
-  // otherwise keep it in its normal spot at the bottom of the page.
-  function positionFooter() {
-    const footer = document.getElementById('appFooter');
-    const anchor = document.getElementById('footerAnchor');
+  // At desktop widths .wrap is meant to fill exactly the space below the
+  // header so each .col can scroll its own overflow internally — the footer
+  // is now a permanent part of the Shift Details column's content, so
+  // without this its tail (and the footer with it) just gets clipped with
+  // no way to reach it. Relying on CSS grid/flex "auto" row sizing alone to
+  // shrink-to-fit here is inconsistent across browsers, so this measures
+  // the real available space and sets it directly.
+  function syncWrapHeight() {
     const wrap = document.querySelector('.wrap');
-    if (window.innerWidth > 1100) {
-      anchor.after(footer);
-    } else {
-      wrap.after(footer);
+    if (window.innerWidth <= 1100) {
+      wrap.style.height = '';
+      return;
     }
+    const header = document.querySelector('.app-header');
+    const bodyPaddingBottom = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
+    const available = window.innerHeight - header.getBoundingClientRect().bottom - bodyPaddingBottom;
+    wrap.style.height = Math.max(200, available) + 'px';
   }
-  positionFooter();
-  window.addEventListener('resize', positionFooter);
+  syncWrapHeight();
+  window.addEventListener('resize', syncWrapHeight);
+  // The Inter web font swaps in after the fallback font first paints, which
+  // can shift the header's rendered height slightly — re-measure once it's
+  // actually loaded so the computed wrap height doesn't end up stale.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(syncWrapHeight);
+  }
 
 </script>
 </body>
