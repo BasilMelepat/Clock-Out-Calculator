@@ -357,23 +357,6 @@
     }
     .col::-webkit-scrollbar { width: 0; height: 0; }  /* Chrome/Safari/Edge */
   }
-  @media (min-width: 1101px) {
-    /* Each card's title bar sticks to the top of its scrolling column and
-       piles up behind the ones above it as you scroll, instead of just
-       scrolling out of view with its card. The -22px/22px bleed cancels
-       .card's own padding so the sticky bar spans the card's full width
-       and sits flush against its rounded top corners. */
-    .card-title {
-      position: sticky;
-      z-index: 5;
-      margin: -22px -22px 14px;
-      padding: 16px 22px 10px;
-      background: var(--card);
-      border-radius: 16px 16px 0 0;
-      transition: background 0.3s ease;
-    }
-    .result .card-title { background: transparent; }
-  }
   @media (max-width: 1100px) {
     .wrap { grid-template-columns: 1fr 1fr; max-width: 900px; }
     .col:nth-child(3) { grid-column: 1 / -1; }
@@ -1424,7 +1407,7 @@
 </head>
 <body>
 <header class="app-header">
-  <span class="app-header-title">⏰ Clock me Out<span class="version-badge">v2.174</span></span>
+  <span class="app-header-title">⏰ Clock me Out<span class="version-badge">v2.177</span></span>
   <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
 </header>
 <script>
@@ -1657,7 +1640,7 @@
         <div class="row">
           <div>
             <label for="earlyTime">Planned Departure Time</label>
-            <input type="time" id="earlyTime" value="18:00">
+            <input type="time" id="earlyTime">
           </div>
         </div>
         <div id="earlyCountdownWrap" style="display:none;">
@@ -3306,7 +3289,7 @@
     }
   }
 
-  document.getElementById('earlyTime').addEventListener('input', calculateEarlyPlan);
+  document.getElementById('earlyTime').addEventListener('input', () => { calculateEarlyPlan(); updateClock(); });
 
   const addEarlyPlanBtn = document.getElementById('addEarlyPlanBtn');
   const earlyPlannerBody = document.getElementById('earlyPlannerBody');
@@ -3386,24 +3369,36 @@
   // of the titles above it in the same column, measured directly since
   // title heights can vary slightly (icons, buttons) and this needs to
   // survive font swaps/resizes exactly like syncWrapHeight() does.
-  function syncStickyCardTitles() {
-    const titles = document.querySelectorAll('.card-title');
+  // Whole cards stack on each other as a column scrolls — each card sticks
+  // at an offset equal to the previous card's title height (so that title
+  // keeps peeking out above the one now covering the rest of it), with a
+  // rising z-index so later cards visually sit on top of earlier ones.
+  function syncStackedCards() {
+    const cards = document.querySelectorAll('.wrap > .col > .card');
     if (window.innerWidth <= 1100) {
-      titles.forEach(t => { t.style.top = ''; });
+      cards.forEach(c => {
+        c.style.position = '';
+        c.style.top = '';
+        c.style.zIndex = '';
+      });
       return;
     }
     document.querySelectorAll('.wrap > .col').forEach(col => {
       let offset = 0;
-      col.querySelectorAll(':scope > .card > .card-title').forEach(title => {
-        title.style.top = offset + 'px';
-        offset += title.getBoundingClientRect().height;
+      const colCards = col.querySelectorAll(':scope > .card');
+      colCards.forEach((card, idx) => {
+        card.style.position = 'sticky';
+        card.style.top = offset + 'px';
+        card.style.zIndex = String(idx + 1);
+        const title = card.querySelector(':scope > .card-title');
+        offset += title ? title.getBoundingClientRect().height : 0;
       });
     });
   }
 
   function syncDesktopMeasurements() {
     syncWrapHeight();
-    syncStickyCardTitles();
+    syncStackedCards();
   }
   syncDesktopMeasurements();
   let resizeQueued = false;
