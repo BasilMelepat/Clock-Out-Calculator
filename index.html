@@ -20,7 +20,6 @@
     --good: #1E8E5A;
     --card: #FFFFFF;
     --surface: #FCFEFF;
-    --header-bg: rgba(234, 244, 252, 0.68); /* translucent version of --sky-light, for the blurred sticky header */
   }
   body.dark-mode {
     --deep: #E8F1FA;
@@ -33,7 +32,6 @@
     --good: #3ED08A;
     --card: #101E30;
     --surface: #16283D;
-    --header-bg: rgba(11, 22, 34, 0.68); /* translucent version of the dark gradient's start stop */
   }
   @keyframes slideDown {
     from { opacity: 0; max-height: 0; transform: translateY(-6px); }
@@ -321,7 +319,7 @@
     width: 100%;
     max-width: 1360px;
     display: grid;
-    grid-template-columns: 1fr 1fr 1.05fr;
+    grid-template-columns: 1fr 1.05fr 1fr;
     gap: 20px;
     align-items: start;
   }
@@ -359,9 +357,26 @@
     }
     .col::-webkit-scrollbar { width: 0; height: 0; }  /* Chrome/Safari/Edge */
   }
+  @media (min-width: 1101px) {
+    /* Each card's title bar sticks to the top of its scrolling column and
+       piles up behind the ones above it as you scroll, instead of just
+       scrolling out of view with its card. The -22px/22px bleed cancels
+       .card's own padding so the sticky bar spans the card's full width
+       and sits flush against its rounded top corners. */
+    .card-title {
+      position: sticky;
+      z-index: 5;
+      margin: -22px -22px 14px;
+      padding: 16px 22px 10px;
+      background: var(--card);
+      border-radius: 16px 16px 0 0;
+      transition: background 0.3s ease;
+    }
+    .result .card-title { background: transparent; }
+  }
   @media (max-width: 1100px) {
     .wrap { grid-template-columns: 1fr 1fr; max-width: 900px; }
-    .col3 { grid-column: 1 / -1; }
+    .col:nth-child(3) { grid-column: 1 / -1; }
   }
   @media (max-width: 780px) {
     body { padding: 16px 12px; }
@@ -369,7 +384,6 @@
     .app-header-title { font-size: 17px; }
     .theme-toggle-btn { width: 38px; height: 38px; font-size: 16px; }
     .wrap { grid-template-columns: 1fr; gap: 14px; }
-    .col3 { grid-column: auto; }
     .card { padding: 16px; }
     .log-input-card,
     .log-input-card.two-col { grid-template-columns: 1fr; padding: 12px; }
@@ -455,55 +469,78 @@
   }
   .row { display: flex; gap: 12px; margin-bottom: 14px; }
   .row > div { flex: 1; }
-  .break-item {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 10px;
-    background: var(--sky-light);
-    position: relative;
+  /* Breaks live inline inside the Shift Details card as compact rows,
+     instead of their own separate boxed card — inspired by a reference
+     "Clock Me Out" build's seamless "Breaks" list. */
+  .breaks-block { margin-top: 18px; }
+  .breaks-block > label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
   }
-  .break-item .row { margin-bottom: 0; }
-  .break-item.overlap {
-    border-color: #E0453C;
-    background: rgba(224,69,60,0.08);
-  }
-  .break-overlap-msg {
-    margin-top: 10px;
-    font-size: 11.5px;
-    font-weight: 700;
-    color: #C0392B;
-  }
-  .break-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--deep2);
-    margin-bottom: 10px;
+  .break-row {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
   }
-  .break-duration {
+  .break-row .break-emoji { font-size: 14px; line-height: 1; }
+  .break-row input[type="time"] {
+    flex: 1;
+    min-width: 100px;
+  }
+  .break-row .break-to {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .break-row .break-duration {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .break-row.overlap input[type="time"] {
+    border-color: #E0453C;
+  }
+  .break-overlap-msg {
+    margin: -4px 0 8px 22px;
     font-size: 11px;
     font-weight: 700;
-    color: var(--sky);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 2px 9px;
+    color: #C0392B;
+    flex-basis: 100%;
   }
-  .remove-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+  .break-remove {
     background: none;
     border: none;
     color: var(--muted);
     font-size: 13px;
     cursor: pointer;
     font-weight: 600;
+    padding: 2px 4px;
+    line-height: 1;
   }
-  .remove-btn:hover { color: #C0392B; }
+  .break-remove:hover { color: #C0392B; }
+  .breaks-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .btn-ghost-sm {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-ghost-sm:hover { background: var(--sky-light); }
   .add-btn {
     width: 100%;
     padding: 10px;
@@ -1303,11 +1340,91 @@
     .footer-desktop { display: none; }
     .footer-stacked { display: block; }
   }
+
+  /* ---- Live analog clock ---- */
+  .clock-card { --clock-accent: var(--sky); }
+  .clock-digital {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: none;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .clock-wrap { display: flex; justify-content: center; }
+  .clock-svg { width: 100%; max-width: 300px; height: auto; display: block; }
+  .clock-face { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: fill .3s ease, stroke .3s ease; }
+  .clock-track { fill: none; stroke: var(--line); stroke-width: 7; opacity: .55; }
+  .clock-plan { stroke: var(--clock-accent); stroke-width: 7; opacity: .22; }
+  .clock-progress { stroke: var(--clock-accent); stroke-width: 7; stroke-linecap: round; transition: stroke .4s ease; }
+  .clock-overtime { stroke: #A78BFA; stroke-width: 7; stroke-linecap: round; }
+  .clock-break { fill: none; stroke: #B08968; stroke-width: 5; opacity: .9; }
+  .clock-tick { stroke: var(--muted); stroke-width: 1; opacity: .55; }
+  .clock-tick.major { stroke-width: 2; opacity: .9; }
+  .clock-num { fill: var(--ink); font-size: 11px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+  .clock-marker { stroke: var(--surface); stroke-width: 2; }
+  .clock-marker.in { fill: var(--sky); }
+  .clock-marker.out { fill: var(--good); }
+  .clock-marker.early { fill: none; stroke: #E8556D; stroke-width: 2.5; }
+  .clock-hand { transform-origin: 100px 100px; }
+  .clock-hand line { stroke-linecap: round; }
+  .clock-hour line { stroke: var(--deep); stroke-width: 5; }
+  .clock-minute line { stroke: var(--deep); stroke-width: 3.2; }
+  .clock-second line { stroke: #E8556D; stroke-width: 1.5; }
+  .clock-second { transition: transform .35s cubic-bezier(.3,1.5,.5,1); }
+  .clock-cap { fill: var(--deep); }
+  .clock-cap-dot { fill: #E8556D; }
+  .clock-svg.clock-low  { --clock-accent: var(--sky); }
+  .clock-svg.clock-mid  { --clock-accent: #F5A623; }
+  .clock-svg.clock-high { --clock-accent: var(--good); }
+  .clock-svg.clock-done { --clock-accent: var(--good); }
+  .clock-svg.clock-done .clock-progress { filter: drop-shadow(0 0 3px var(--good)); }
+  .clock-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-top: 12px;
+  }
+  .clock-pill {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+    color: var(--deep2);
+    background: var(--sky-light);
+    border: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .clock-pill.working { color: #fff; background: var(--sky); border-color: transparent; }
+  .clock-pill.onbreak { color: #fff; background: #B08968; border-color: transparent; }
+  .clock-pill.done { color: #fff; background: var(--good); border-color: transparent; }
+  .clock-info { font-size: 12.5px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .clock-legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .clock-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .clock-legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .clock-legend .lg-progress { background: var(--sky); }
+  .clock-legend .lg-break { background: #B08968; }
+  .clock-legend .lg-in { background: var(--sky); border: 1.5px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+  .clock-legend .lg-out { background: var(--good); border: 1.5px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+  @media (prefers-reduced-motion: reduce) {
+    .clock-second { transition: none; }
+  }
 </style>
 </head>
 <body>
 <header class="app-header">
-  <span class="app-header-title">⏰ Clock me Out<span class="version-badge">v2.166</span></span>
+  <span class="app-header-title">⏰ Clock me Out<span class="version-badge">v2.174</span></span>
   <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
 </header>
 <script>
@@ -1319,7 +1436,41 @@
   })();
 </script>
 <div class="wrap">
-  <div class="col col3">
+  <div class="col">
+    <div class="card clock-card" id="clockCard">
+      <div class="card-title">
+        <span>🕰️ Live Clock</span>
+        <span class="clock-digital" id="clockDigital">--:--:--</span>
+      </div>
+      <div class="clock-wrap">
+        <svg id="analogClock" class="clock-svg clock-idle" viewBox="0 0 200 200" role="img" aria-label="Analog clock showing shift progress and breaks">
+          <circle class="clock-face" cx="100" cy="100" r="96"/>
+          <circle class="clock-track" cx="100" cy="100" r="86"/>
+          <path class="clock-plan" id="clockPlan" fill="none"/>
+          <path class="clock-progress" id="clockProgress" fill="none"/>
+          <path class="clock-overtime" id="clockOvertime" fill="none"/>
+          <g id="clockBreaks"></g>
+          <g id="clockTicks"></g>
+          <g id="clockMarkers"></g>
+          <g class="clock-hand clock-hour" id="clockHour"><line x1="100" y1="106" x2="100" y2="68"/></g>
+          <g class="clock-hand clock-minute" id="clockMinute"><line x1="100" y1="108" x2="100" y2="50"/></g>
+          <g class="clock-hand clock-second" id="clockSecond"><line x1="100" y1="114" x2="100" y2="40"/></g>
+          <circle class="clock-cap" cx="100" cy="100" r="4.5"/>
+          <circle class="clock-cap-dot" cx="100" cy="100" r="1.8"/>
+        </svg>
+      </div>
+      <div class="clock-status">
+        <span class="clock-pill" id="clockPill">Set clock-in time</span>
+        <span class="clock-info" id="clockInfo">Enter your clock-in time to start</span>
+      </div>
+      <div class="clock-legend">
+        <span><i class="lg-progress"></i>Progress</span>
+        <span><i class="lg-break"></i>Break</span>
+        <span><i class="lg-in"></i>In</span>
+        <span><i class="lg-out"></i>Out</span>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-title">
         <span>📅 Daily Work Log</span>
@@ -1407,6 +1558,14 @@
           <span class="input-suffix">hrs</span>
         </div>
       </div>
+      <div class="breaks-block">
+        <label>Breaks</label>
+        <div id="breaksContainer"></div>
+        <div class="breaks-actions">
+          <button class="btn-ghost-sm" id="addBreakBtn" type="button">+ Add Break</button>
+          <button class="btn-ghost-sm" id="clearBreaksBtn" type="button" style="display:none;" aria-label="Clear all breaks">Clear All</button>
+        </div>
+      </div>
     </div>
 
     <div class="card countdown-card">
@@ -1432,6 +1591,10 @@
       </div>
     </div>
 
+    <div class="app-footer footer-desktop">© 2026 Basil Melepat · Designed for You</div>
+  </div>
+
+  <div class="col">
     <div class="card result" id="resultCard">
       <div class="particles" aria-hidden="true">
         <span style="left:8%; width:5px; height:5px; animation-delay:0s; animation-duration:4.5s;"></span>
@@ -1456,19 +1619,6 @@
         <span>☕ Break Time: <b id="breakHoursOut">--</b></span>
       </div>
     </div>
-    <div class="app-footer footer-desktop">© 2026 Basil Melepat · Designed for You</div>
-  </div>
-
-  <div class="col">
-    <div class="card">
-      <div class="card-title">
-        <span>☕ Scheduled Breaks</span>
-        <button class="clear-btn" id="clearBreaksBtn" type="button" style="display:none;" aria-label="Clear all breaks">🗑️ Clear All</button>
-      </div>
-      <div id="breaksContainer"></div>
-      <button class="add-btn" id="addBreakBtn">➕ Add Break</button>
-    </div>
-
     <div class="card">
       <div class="card-title" id="lateTitleRow">
         <span>⏱️ Running Late Balance</span>
@@ -1556,7 +1706,7 @@
 
   function updateClearBreaksVisibility() {
     const clearBreaksBtn = document.getElementById('clearBreaksBtn');
-    const hasBreaks = breaksContainer.querySelectorAll('.break-item').length > 0;
+    const hasBreaks = breaksContainer.querySelectorAll('.break-row').length > 0;
     clearBreaksBtn.style.display = hasBreaks ? 'inline-block' : 'none';
   }
 
@@ -1565,30 +1715,23 @@
     const id = breakCount;
     const emoji = breakEmojis[(id - 1) % breakEmojis.length];
     const div = document.createElement('div');
-    div.className = 'break-item';
+    div.className = 'break-row';
     div.dataset.id = id;
 
-    // Default a new break to "now" through "now + 15 minutes" instead of a
-    // fixed 1:00 PM placeholder, so it reflects when the break is actually
-    // being taken. Explicit start/end (e.g. restoring saved breaks) still win.
+    // Default a new break to "now - 15 minutes" through "now" (i.e. a break
+    // that just finished) instead of a fixed 1:00 PM placeholder. Explicit start/end (e.g. restoring saved breaks) still win.
     const now = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes();
-    const defaultStart = minutesToInputTime(nowMin);
-    const defaultEnd = minutesToInputTime(nowMin + 15);
+    const defaultStart = minutesToInputTime(nowMin - 15);
+    const defaultEnd = minutesToInputTime(nowMin);
 
     div.innerHTML = `
-      <button class="remove-btn" data-remove="${id}" aria-label="Remove this break">❌</button>
-      <div class="break-label"><span class="break-label-text">${emoji} Break ${id}</span><span class="break-duration" data-duration="${id}">--</span></div>
-      <div class="row">
-        <div>
-          <label>Start Time</label>
-          <input type="time" class="break-start" value="${start || defaultStart}">
-        </div>
-        <div>
-          <label>End Time</label>
-          <input type="time" class="break-end" value="${end || defaultEnd}">
-        </div>
-      </div>
+      <span class="break-emoji">${emoji}</span>
+      <input type="time" class="break-start" value="${start || defaultStart}">
+      <span class="break-to">to</span>
+      <input type="time" class="break-end" value="${end || defaultEnd}">
+      <span class="break-duration" data-duration="${id}">--</span>
+      <button class="break-remove" data-remove="${id}" aria-label="Remove this break">✕</button>
     `;
     breaksContainer.appendChild(div);
     div.classList.add('reveal');
@@ -1627,7 +1770,7 @@
   // counted) total break minutes by merging overlapping ranges.
   function getBreakRanges() {
     const ranges = [];
-    breaksContainer.querySelectorAll('.break-item').forEach(item => {
+    breaksContainer.querySelectorAll('.break-row').forEach(item => {
       const s = item.querySelector('.break-start').value;
       const e = item.querySelector('.break-end').value;
       if (s && e) {
@@ -1684,17 +1827,16 @@
   }
 
   function renumber() {
-    const items = breaksContainer.querySelectorAll('.break-item');
+    const items = breaksContainer.querySelectorAll('.break-row');
     items.forEach((item, idx) => {
-      const emoji = breakEmojis[idx % breakEmojis.length];
-      item.querySelector('.break-label-text').textContent = `${emoji} Break ${idx + 1}`;
+      item.querySelector('.break-emoji').textContent = breakEmojis[idx % breakEmojis.length];
     });
   }
 
   addBreakBtn.addEventListener('click', () => { addBreak(); calculate(); saveShiftState(); });
 
   document.getElementById('clearBreaksBtn').addEventListener('click', () => {
-    const count = breaksContainer.querySelectorAll('.break-item').length;
+    const count = breaksContainer.querySelectorAll('.break-row').length;
     if (count > 1 && !confirm(`Remove all ${count} breaks? This can't be undone.`)) {
       return;
     }
@@ -1740,6 +1882,8 @@
   function pad(n) { return String(n).padStart(2, '0'); }
 
   function renderFlipTime(el, text, opts) {
+    if (el._flipText === text) return; // nothing changed since last render
+    el._flipText = text;
     opts = opts || {};
     const charClass = opts.charClass || 'flip-char';
     const animClass = opts.animClass || 'flip-anim';
@@ -1762,15 +1906,21 @@
       return;
     }
 
+    // Restart the flip animation on every changed character with a single
+    // forced reflow for the whole batch, instead of one per character.
+    const changed = [];
     chars.forEach((c, i) => {
       const span = el._flipSpans[i];
       if (span.textContent !== c) {
         span.textContent = c;
         span.classList.remove(animClass);
-        void span.offsetWidth;
-        span.classList.add(animClass);
+        changed.push(span);
       }
     });
+    if (changed.length) {
+      void el.offsetWidth;
+      changed.forEach(span => span.classList.add(animClass));
+    }
   }
 
   function secondsToHMS(totalSeconds) {
@@ -1817,6 +1967,198 @@
     earlyCountdownSub: document.getElementById('earlyCountdownSub')
   };
 
+
+  // ---- Live analog clock ----
+  const clockEls = {
+    svg: document.getElementById('analogClock'),
+    plan: document.getElementById('clockPlan'),
+    progress: document.getElementById('clockProgress'),
+    overtime: document.getElementById('clockOvertime'),
+    breaks: document.getElementById('clockBreaks'),
+    markers: document.getElementById('clockMarkers'),
+    hour: document.getElementById('clockHour'),
+    minute: document.getElementById('clockMinute'),
+    second: document.getElementById('clockSecond'),
+    pill: document.getElementById('clockPill'),
+    info: document.getElementById('clockInfo'),
+    digital: document.getElementById('clockDigital')
+  };
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const CLOCK_RING_R = 86;   // progress / plan ring
+  const CLOCK_BREAK_R = 75;  // break segments ring
+
+  // Static face (ticks + numbers) is built once.
+  (function buildClockFace() {
+    const ticks = document.getElementById('clockTicks');
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < 60; i++) {
+      const major = i % 5 === 0;
+      const a = i * 6 * Math.PI / 180;
+      const r1 = 67, r2 = major ? 61 : 64;
+      const line = document.createElementNS(SVG_NS, 'line');
+      line.setAttribute('class', 'clock-tick' + (major ? ' major' : ''));
+      line.setAttribute('x1', (100 + r1 * Math.sin(a)).toFixed(2));
+      line.setAttribute('y1', (100 - r1 * Math.cos(a)).toFixed(2));
+      line.setAttribute('x2', (100 + r2 * Math.sin(a)).toFixed(2));
+      line.setAttribute('y2', (100 - r2 * Math.cos(a)).toFixed(2));
+      frag.appendChild(line);
+      if (major) {
+        const n = i / 5 || 12;
+        const t = document.createElementNS(SVG_NS, 'text');
+        t.setAttribute('class', 'clock-num');
+        t.setAttribute('x', (100 + 52 * Math.sin(a)).toFixed(2));
+        t.setAttribute('y', (100 - 52 * Math.cos(a)).toFixed(2));
+        t.textContent = n;
+        frag.appendChild(t);
+      }
+    }
+    ticks.appendChild(frag);
+  })();
+
+  // Angle (deg, clockwise from 12) for a minute-of-day on a 12-hour dial.
+  function clockAngle(minOfDay) { return ((minOfDay % 720) + 720) % 720 * 0.5; }
+  function clockPolar(r, deg) {
+    const a = (deg - 90) * Math.PI / 180;
+    return [100 + r * Math.cos(a), 100 + r * Math.sin(a)];
+  }
+  function clockArc(r, startDeg, sweepDeg) {
+    if (sweepDeg <= 0) return '';
+    const sw = Math.min(sweepDeg, 359.99);
+    const [x0, y0] = clockPolar(r, startDeg);
+    const [x1, y1] = clockPolar(r, startDeg + sw);
+    return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${sw > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+  }
+  const dateToMinOfDay = d => d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+
+  // Only touch the DOM when a value actually changed.
+  function setAttrIfChanged(node, name, value) {
+    if (node._c === undefined) node._c = {};
+    if (node._c[name] === value) return;
+    node._c[name] = value;
+    node.setAttribute(name, value);
+  }
+  function setTextIfChanged(node, value) {
+    if (node.textContent !== value) node.textContent = value;
+  }
+
+  let clockSecTurns = 0, clockLastSec = -1, clockSnap = true, clockMarkerSig = '', clockBreakSig = '';
+
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes(), sec = now.getSeconds();
+    const rot = (node, deg) => { node.style.transform = `rotate(${deg}deg)`; };
+
+    // Hands
+    rot(clockEls.hour, ((h % 12) + m / 60 + sec / 3600) * 30);
+    rot(clockEls.minute, (m + sec / 60) * 6);
+    if (clockSnap || clockLastSec < 0) {
+      clockSecTurns = 0;
+      clockEls.second.style.transition = 'none';
+      rot(clockEls.second, sec * 6);
+      void clockEls.second.offsetWidth;
+      clockEls.second.style.transition = '';
+    } else {
+      if (sec < clockLastSec) clockSecTurns++;
+      rot(clockEls.second, clockSecTurns * 360 + sec * 6);
+    }
+    clockLastSec = sec;
+    clockSnap = false;
+
+    setTextIfChanged(clockEls.digital, `${pad(h % 12 || 12)}:${pad(m)}:${pad(sec)} ${h >= 12 ? 'PM' : 'AM'}`);
+
+    // Break segments (rebuilt only when the set of breaks changes)
+    const ranges = getBreakRanges();
+    const breakSig = ranges.map(r => r.sMin + '-' + r.eMin).join('|');
+    if (breakSig !== clockBreakSig) {
+      clockBreakSig = breakSig;
+      clockEls.breaks.innerHTML = '';
+      ranges.forEach(r => {
+        const d = clockArc(CLOCK_BREAK_R, clockAngle(r.sMin), (r.eMin - r.sMin) * 0.5);
+        if (!d) return;
+        const p = document.createElementNS(SVG_NS, 'path');
+        p.setAttribute('class', 'clock-break');
+        p.setAttribute('d', d);
+        const t = document.createElementNS(SVG_NS, 'title');
+        t.textContent = `Break ${minutesToTimeStr(r.sMin)} – ${minutesToTimeStr(r.eMin)}`;
+        p.appendChild(t);
+        clockEls.breaks.appendChild(p);
+      });
+    }
+
+    const inD = state.clockInDate, outD = state.clockOutDate;
+    const svg = clockEls.svg;
+    let stateClass = 'clock-idle', pillClass = 'clock-pill', pillText, infoText;
+
+    // Markers (clock-in / clock-out / planned early departure)
+    const earlyD = state.earlyDepartureDate;
+    const markerSig = [inD && inD.getTime(), outD && outD.getTime(), earlyD && earlyD.getTime()].join('|');
+    if (markerSig !== clockMarkerSig) {
+      clockMarkerSig = markerSig;
+      clockEls.markers.innerHTML = '';
+      const addMarker = (date, cls, label) => {
+        if (!date) return;
+        const [x, y] = clockPolar(CLOCK_RING_R, clockAngle(dateToMinOfDay(date)));
+        const c = document.createElementNS(SVG_NS, 'circle');
+        c.setAttribute('class', 'clock-marker ' + cls);
+        c.setAttribute('cx', x.toFixed(2));
+        c.setAttribute('cy', y.toFixed(2));
+        c.setAttribute('r', cls === 'early' ? 4 : 5);
+        const t = document.createElementNS(SVG_NS, 'title');
+        t.textContent = `${label} ${minutesToTimeStr(dateToMinOfDay(date))}`;
+        c.appendChild(t);
+        clockEls.markers.appendChild(c);
+      };
+      addMarker(inD, 'in', 'Clock-in');
+      addMarker(outD, 'out', 'Clock-out');
+      addMarker(earlyD, 'early', 'Planned departure');
+    }
+
+    if (!inD || !outD) {
+      setAttrIfChanged(clockEls.plan, 'd', '');
+      setAttrIfChanged(clockEls.progress, 'd', '');
+      setAttrIfChanged(clockEls.overtime, 'd', '');
+      pillText = 'Set clock-in time';
+      infoText = 'Enter your clock-in time to start';
+    } else {
+      const totalMin = (outD - inD) / 60000;
+      const elapsedMin = (now - inD) / 60000;
+      const startDeg = clockAngle(dateToMinOfDay(inD));
+      setAttrIfChanged(clockEls.plan, 'd', clockArc(CLOCK_RING_R, startDeg, totalMin * 0.5));
+
+      if (elapsedMin < 0) {
+        setAttrIfChanged(clockEls.progress, 'd', '');
+        setAttrIfChanged(clockEls.overtime, 'd', '');
+        pillText = 'Not started';
+        infoText = `Starts at ${minutesToTimeStr(dateToMinOfDay(inD))}`;
+      } else if (now >= outD) {
+        setAttrIfChanged(clockEls.progress, 'd', clockArc(CLOCK_RING_R, startDeg, totalMin * 0.5));
+        const overMin = (now - outD) / 60000;
+        setAttrIfChanged(clockEls.overtime, 'd', clockArc(CLOCK_RING_R, clockAngle(dateToMinOfDay(outD)), overMin * 0.5));
+        stateClass = 'clock-done';
+        pillClass += ' done';
+        pillText = 'Goal reached 🎉';
+        infoText = overMin >= 1 ? `+${formatDuration(Math.floor(overMin))} overtime` : '100% done';
+      } else {
+        setAttrIfChanged(clockEls.progress, 'd', clockArc(CLOCK_RING_R, startDeg, elapsedMin * 0.5));
+        setAttrIfChanged(clockEls.overtime, 'd', '');
+        const pct = Math.min(100, Math.floor(elapsedMin / totalMin * 100));
+        stateClass = pct < 50 ? 'clock-low' : (pct < 85 ? 'clock-mid' : 'clock-high');
+        const nowMin = dateToMinOfDay(now);
+        const onBreak = ranges.some(r =>
+          (nowMin >= r.sMin && nowMin < r.eMin) || (nowMin + 1440 >= r.sMin && nowMin + 1440 < r.eMin));
+        pillClass += onBreak ? ' onbreak' : ' working';
+        pillText = onBreak ? '☕ On break' : 'Working';
+        infoText = `${pct}% done · ${secondsToHMS((outD - now) / 1000).str} left`;
+      }
+    }
+
+    const cls = 'clock-svg ' + stateClass;
+    if (svg.getAttribute('class') !== cls) svg.setAttribute('class', cls);
+    if (clockEls.pill.className !== pillClass) clockEls.pill.className = pillClass;
+    setTextIfChanged(clockEls.pill, pillText);
+    setTextIfChanged(clockEls.info, infoText);
+  }
+
   function calculate() {
     const clockIn = el.clockIn.value;
     const targetHours = parseFloat(el.targetHours.value) || 0;
@@ -1842,6 +2184,7 @@
       updateBreakOverlaps(earlyRanges);
       updateCountdown();
       calculateEarlyPlan();
+      updateClock();
       updateLateMotivation(rawBacklogMin, includeLate, targetHours, null);
       return;
     }
@@ -1888,6 +2231,7 @@
 
     updateCountdown();
     calculateEarlyPlan();
+    updateClock();
     updateLateMotivation(rawBacklogMin, includeLate, targetHours, clockOutDate, daysAhead);
   }
 
@@ -2013,7 +2357,7 @@
   function saveShiftStateNow() {
     try {
       const breaks = [];
-      breaksContainer.querySelectorAll('.break-item').forEach(item => {
+      breaksContainer.querySelectorAll('.break-row').forEach(item => {
         breaks.push({
           start: item.querySelector('.break-start').value,
           end: item.querySelector('.break-end').value
@@ -2999,10 +3343,25 @@
     weekday: 'short', month: 'short', day: 'numeric'
   });
 
-  setInterval(() => {
+  // Tick once a second, but only while the tab is visible — a hidden tab
+  // doesn't need flip animations and DOM writes every second. On return,
+  // update immediately so nothing looks stale.
+  function tick() {
     updateCountdown();
     updateEarlyCountdown();
-  }, 1000);
+    updateClock();
+  }
+  let tickTimer = setInterval(tick, 1000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      clearInterval(tickTimer);
+      tickTimer = null;
+    } else if (!tickTimer) {
+      clockSnap = true; // jump the second hand instead of spinning it
+      tick();
+      tickTimer = setInterval(tick, 1000);
+    }
+  });
 
   // At desktop widths .wrap is meant to fill exactly the space below the
   // header so each .col can scroll its own overflow internally — the footer
@@ -3022,13 +3381,42 @@
     const available = window.innerHeight - header.getBoundingClientRect().bottom - bodyPaddingBottom;
     wrap.style.height = Math.max(200, available) + 'px';
   }
-  syncWrapHeight();
-  window.addEventListener('resize', syncWrapHeight);
+  // Sticky card titles pile up as a column scrolls (see .card-title in the
+  // desktop media query) — each one's sticky offset is the combined height
+  // of the titles above it in the same column, measured directly since
+  // title heights can vary slightly (icons, buttons) and this needs to
+  // survive font swaps/resizes exactly like syncWrapHeight() does.
+  function syncStickyCardTitles() {
+    const titles = document.querySelectorAll('.card-title');
+    if (window.innerWidth <= 1100) {
+      titles.forEach(t => { t.style.top = ''; });
+      return;
+    }
+    document.querySelectorAll('.wrap > .col').forEach(col => {
+      let offset = 0;
+      col.querySelectorAll(':scope > .card > .card-title').forEach(title => {
+        title.style.top = offset + 'px';
+        offset += title.getBoundingClientRect().height;
+      });
+    });
+  }
+
+  function syncDesktopMeasurements() {
+    syncWrapHeight();
+    syncStickyCardTitles();
+  }
+  syncDesktopMeasurements();
+  let resizeQueued = false;
+  window.addEventListener('resize', () => {
+    if (resizeQueued) return;
+    resizeQueued = true;
+    requestAnimationFrame(() => { resizeQueued = false; syncDesktopMeasurements(); });
+  });
   // The Inter web font swaps in after the fallback font first paints, which
   // can shift the header's rendered height slightly — re-measure once it's
   // actually loaded so the computed wrap height doesn't end up stale.
   if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(syncWrapHeight);
+    document.fonts.ready.then(syncDesktopMeasurements);
   }
 
 </script>
