@@ -67,10 +67,29 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-bottom: 0;
   }
-  .log-input-card .log-add-btn {
+  .log-input-card .log-add-row {
     grid-column: 1 / -1;
     margin-top: 2px;
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
   }
+  .log-add-row .log-add-btn { flex: 1; min-width: 0; }
+  .log-refresh-btn {
+    flex: 0 0 auto;
+    padding: 0 8px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.22;
+    border-radius: 8px;
+    transition: opacity .15s, background .15s;
+  }
+  .log-refresh-btn:hover,
+  .log-refresh-btn:focus-visible { opacity: 0.85; background: var(--sky-light); outline: none; }
+  .log-refresh-btn.active { opacity: 1; }
   .log-input-box {
     /* Grid items default to min-width: auto, which stops them shrinking
        below their content's intrinsic size — override so the equal
@@ -306,7 +325,11 @@
     margin-left: 7px;
     letter-spacing: 0.02em;
     white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
+  .version-badge:hover { background: var(--sky); color: #fff; }
   .theme-toggle-btn {
     width: 42px;
     height: 42px;
@@ -1081,6 +1104,24 @@
   .calendar-cell.today {
     box-shadow: 0 0 0 2px var(--sky) inset;
   }
+  /* Live shift progress on today's cell: fills left-to-right and overrides
+     any logged-entry colour while the shift is active. */
+  .calendar-cell.today.live,
+  .calendar-cell.today.live:hover {
+    --live-fill: rgba(79, 168, 232, 0.5);
+    background: linear-gradient(to right, var(--live-fill) var(--live-pct, 0%), var(--sky-light) var(--live-pct, 0%));
+    border-color: var(--sky);
+    color: var(--deep);
+  }
+  body.dark-mode .calendar-cell.today.live,
+  body.dark-mode .calendar-cell.today.live:hover { --live-fill: rgba(95, 184, 255, 0.45); }
+  .calendar-cell.today.live.live-done,
+  .calendar-cell.today.live.live-done:hover {
+    --live-fill: rgba(30, 142, 90, 0.4);
+    border-color: var(--good);
+  }
+  body.dark-mode .calendar-cell.today.live.live-done,
+  body.dark-mode .calendar-cell.today.live.live-done:hover { --live-fill: rgba(62, 208, 138, 0.4); }
   .calendar-legend {
     display: flex;
     flex-wrap: wrap;
@@ -1300,6 +1341,7 @@
   .clock-plan { stroke: var(--clock-accent); stroke-width: 7; opacity: .22; }
   .clock-progress { stroke: var(--clock-accent); stroke-width: 7; stroke-linecap: round; transition: stroke .4s ease; }
   .clock-overtime { stroke: #A78BFA; stroke-width: 7; stroke-linecap: round; }
+  .clock-lap2 { stroke-width: 3.5; }
   .clock-break { fill: none; stroke: #B08968; stroke-width: 5; opacity: .9; }
   .clock-tick { stroke: var(--muted); stroke-width: 1; opacity: .55; }
   .clock-tick.major { stroke-width: 2; opacity: .9; }
@@ -1323,10 +1365,11 @@
   .clock-svg.clock-done .clock-progress { filter: drop-shadow(0 0 3px var(--good)); }
   .clock-status {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px 12px;
     margin-top: 14px;
   }
   .clock-pill {
@@ -1367,7 +1410,7 @@
 </head>
 <body>
 <header class="app-header">
-  <span class="app-header-title">⏰ Clock me Out<span class="version-badge">v2.181</span></span>
+  <span class="app-header-title">⏰ Clock me Out<span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.192</span></span>
   <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
 </header>
 <script>
@@ -1401,7 +1444,10 @@
           <label for="logDateInput">Date (optional)</label>
           <input type="date" id="logDateInput" class="log-duration-input">
         </div>
-        <button class="log-add-btn" id="addLogEntryBtn" type="button">➕ Add Day</button>
+        <div class="log-add-row">
+          <button class="log-add-btn" id="addLogEntryBtn" type="button">➕ Add Day</button>
+          <button class="log-refresh-btn" id="logRefreshBtn" type="button" aria-label="Reset input fields" title="Reset fields">🔄️</button>
+        </div>
       </div>
 
       <div class="log-io-row">
@@ -1543,6 +1589,9 @@
           <path class="clock-plan" id="clockPlan" fill="none"/>
           <path class="clock-progress" id="clockProgress" fill="none"/>
           <path class="clock-overtime" id="clockOvertime" fill="none"/>
+          <path class="clock-plan clock-lap2" id="clockPlan2" fill="none"/>
+          <path class="clock-progress clock-lap2" id="clockProgress2" fill="none"/>
+          <path class="clock-overtime clock-lap2" id="clockOvertime2" fill="none"/>
           <g id="clockBreaks"></g>
           <g id="clockTicks"></g>
           <g id="clockMarkers"></g>
@@ -1896,6 +1945,9 @@
     plan: document.getElementById('clockPlan'),
     progress: document.getElementById('clockProgress'),
     overtime: document.getElementById('clockOvertime'),
+    plan2: document.getElementById('clockPlan2'),
+    progress2: document.getElementById('clockProgress2'),
+    overtime2: document.getElementById('clockOvertime2'),
     breaks: document.getElementById('clockBreaks'),
     markers: document.getElementById('clockMarkers'),
     hour: document.getElementById('clockHour'),
@@ -1908,6 +1960,7 @@
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const CLOCK_RING_R = 86;   // progress / plan ring
   const CLOCK_BREAK_R = 75;  // break segments ring
+  const CLOCK_RING2_R = 80;  // thin 2nd-lap ring for shifts longer than the 12-hour dial
 
   // Static face (ticks + numbers) is built once.
   (function buildClockFace() {
@@ -1945,8 +1998,15 @@
   }
   function clockArc(r, startDeg, sweepDeg) {
     if (sweepDeg <= 0) return '';
-    const sw = Math.min(sweepDeg, 359.99);
     const [x0, y0] = clockPolar(r, startDeg);
+    // A full turn can't be one arc: its endpoints (almost) coincide, so after
+    // rounding the browser picks a wrong, off-centre circle. Draw it as two
+    // exact half-circles instead.
+    if (sweepDeg >= 359.9) {
+      const [xm, ym] = clockPolar(r, startDeg + 180);
+      return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 0 1 ${xm.toFixed(2)} ${ym.toFixed(2)} A${r} ${r} 0 0 1 ${x0.toFixed(2)} ${y0.toFixed(2)}`;
+    }
+    const sw = sweepDeg;
     const [x1, y1] = clockPolar(r, startDeg + sw);
     return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${sw > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
   }
@@ -1963,6 +2023,7 @@
     if (node.textContent !== value) node.textContent = value;
   }
 
+  let calLiveProgress = null; // 0-100 while today's shift is active, else null
   let clockSecTurns = 0, clockLastSec = -1, clockSnap = true, clockMarkerSig = '', clockBreakSig = '';
 
   function updateClock() {
@@ -2009,7 +2070,8 @@
 
     const inD = state.clockInDate, outD = state.clockOutDate;
     const svg = clockEls.svg;
-    let stateClass = 'clock-idle', pillClass = 'clock-pill', pillText, infoText, rollInfo = false;
+    let stateClass = 'clock-idle', pillClass = 'clock-pill', pillText, infoText = '', rollInfo = false;
+    calLiveProgress = null;
 
     // Markers (clock-in / clock-out / planned early departure)
     const earlyD = state.earlyDepartureDate;
@@ -2019,12 +2081,13 @@
       clockEls.markers.innerHTML = '';
       const addMarker = (date, cls, label) => {
         if (!date) return;
-        const [x, y] = clockPolar(CLOCK_RING_R, clockAngle(dateToMinOfDay(date)));
+        const lap2 = cls !== 'in' && inD && (date - inD) / 60000 >= 720;
+        const [x, y] = clockPolar(lap2 ? CLOCK_RING2_R : CLOCK_RING_R, clockAngle(dateToMinOfDay(date)));
         const c = document.createElementNS(SVG_NS, 'circle');
         c.setAttribute('class', 'clock-marker ' + cls);
         c.setAttribute('cx', x.toFixed(2));
         c.setAttribute('cy', y.toFixed(2));
-        c.setAttribute('r', cls === 'early' ? 4 : 5);
+        c.setAttribute('r', (cls === 'early' ? 4 : 5) - (lap2 ? 1.4 : 0));
         const t = document.createElementNS(SVG_NS, 'title');
         t.textContent = `${label} ${minutesToTimeStr(dateToMinOfDay(date))}`;
         c.appendChild(t);
@@ -2039,30 +2102,52 @@
       setAttrIfChanged(clockEls.plan, 'd', '');
       setAttrIfChanged(clockEls.progress, 'd', '');
       setAttrIfChanged(clockEls.overtime, 'd', '');
+      setAttrIfChanged(clockEls.plan2, 'd', '');
+      setAttrIfChanged(clockEls.progress2, 'd', '');
+      setAttrIfChanged(clockEls.overtime2, 'd', '');
       pillText = 'Set clock-in time';
       infoText = 'Enter your clock-in time to start';
     } else {
       const totalMin = (outD - inD) / 60000;
       const elapsedMin = (now - inD) / 60000;
       const startDeg = clockAngle(dateToMinOfDay(inD));
-      setAttrIfChanged(clockEls.plan, 'd', clockArc(CLOCK_RING_R, startDeg, totalMin * 0.5));
+      // The dial is 12 hours, so lap 1 (first 12h) uses the main ring and any
+      // time beyond that continues on a thin inner ring.
+      const lap1Deg = Math.min(totalMin, 720) * 0.5;
+      const lap2Deg = Math.max(0, totalMin - 720) * 0.5;
+      setAttrIfChanged(clockEls.plan, 'd', clockArc(CLOCK_RING_R, startDeg, lap1Deg));
+      setAttrIfChanged(clockEls.plan2, 'd', clockArc(CLOCK_RING2_R, startDeg, lap2Deg));
+      const setProgress = el => {
+        setAttrIfChanged(clockEls.progress, 'd', clockArc(CLOCK_RING_R, startDeg, Math.min(el, 720) * 0.5));
+        setAttrIfChanged(clockEls.progress2, 'd', clockArc(CLOCK_RING2_R, startDeg, Math.min(Math.max(0, el - 720), Math.max(0, totalMin - 720)) * 0.5));
+      };
 
       if (elapsedMin < 0) {
-        setAttrIfChanged(clockEls.progress, 'd', '');
+        setProgress(0);
         setAttrIfChanged(clockEls.overtime, 'd', '');
+        setAttrIfChanged(clockEls.overtime2, 'd', '');
         pillText = 'Not started';
         infoText = `Starts at ${minutesToTimeStr(dateToMinOfDay(inD))}`;
       } else if (now >= outD) {
-        setAttrIfChanged(clockEls.progress, 'd', clockArc(CLOCK_RING_R, startDeg, totalMin * 0.5));
+        setProgress(totalMin);
         const overMin = (now - outD) / 60000;
-        setAttrIfChanged(clockEls.overtime, 'd', clockArc(CLOCK_RING_R, clockAngle(dateToMinOfDay(outD)), overMin * 0.5));
+        const outDeg = clockAngle(dateToMinOfDay(outD));
+        // A full-dial (12h+) shift has no free outer ring, so overtime runs on the inner one.
+        const overOnInner = totalMin >= 720;
+        setAttrIfChanged(clockEls.overtime, 'd', overOnInner ? '' : clockArc(CLOCK_RING_R, outDeg, overMin * 0.5));
+        setAttrIfChanged(clockEls.overtime2, 'd', overOnInner ? clockArc(CLOCK_RING2_R, outDeg, overMin * 0.5) : '');
         stateClass = 'clock-done';
         pillClass += ' done';
         pillText = 'Goal reached 🎉';
-        infoText = overMin >= 1 ? `+${formatDuration(Math.floor(overMin))} overtime` : '100% done';
+        const otSec = Math.max(0, Math.floor((now - outD) / 1000));
+        const otH = Math.floor(otSec / 3600), otM = Math.floor(otSec % 3600 / 60), otS = otSec % 60;
+        infoText = `+${otH ? otH + 'h ' : ''}${otH || otM ? otM + 'm ' : ''}${otS}s overtime`;
+        rollInfo = true;
+        calLiveProgress = 100;
       } else {
-        setAttrIfChanged(clockEls.progress, 'd', clockArc(CLOCK_RING_R, startDeg, elapsedMin * 0.5));
+        setProgress(elapsedMin);
         setAttrIfChanged(clockEls.overtime, 'd', '');
+        setAttrIfChanged(clockEls.overtime2, 'd', '');
         const pct = Math.min(100, Math.floor(elapsedMin / totalMin * 100));
         stateClass = pct < 50 ? 'clock-low' : (pct < 85 ? 'clock-mid' : 'clock-high');
         const nowMin = dateToMinOfDay(now);
@@ -2070,8 +2155,9 @@
           (nowMin >= r.sMin && nowMin < r.eMin) || (nowMin + 1440 >= r.sMin && nowMin + 1440 < r.eMin));
         pillClass += onBreak ? ' onbreak' : ' working';
         pillText = onBreak ? '☕ On break' : 'Working';
-        infoText = `${pct}% done · ${secondsToHMS((outD - now) / 1000).str} left`;
+        infoText = `${secondsToHMS((outD - now) / 1000).str} left`;
         rollInfo = true;
+        calLiveProgress = Math.min(100, Math.max(0, elapsedMin / totalMin * 100));
       }
     }
 
@@ -2088,11 +2174,13 @@
       setTextIfChanged(clockEls.info, infoText);
     }
     clockEls.info.classList.toggle('rolling', rollInfo);
+    clockEls.info.hidden = !infoText;
+    applyCalendarLive();
   }
 
   function calculate() {
     const clockIn = el.clockIn.value;
-    const targetHours = parseFloat(el.targetHours.value) || 0;
+    const targetHours = Math.min(MAX_TARGET_HOURS, parseFloat(el.targetHours.value) || 0);
     const lateMinutes = parseFloat(el.lateMinutes.value) || 0;
     const lateSeconds = parseFloat(el.lateSeconds.value) || 0;
     const rawBacklogMin = Math.max(0, lateMinutes + lateSeconds / 60);
@@ -2241,6 +2329,20 @@
   const logDuration = document.getElementById('logDuration');
   const logTarget = document.getElementById('logTarget');
   const logDateInput = document.getElementById('logDateInput');
+  const logRefreshBtn = document.getElementById('logRefreshBtn');
+  // The refresh button is faint by default and fully visible while the
+  // log input fields hold anything (target counts only if changed from 8).
+  function syncRefreshBtn() {
+    const t = logTarget.value.trim();
+    const hasData = logDuration.value.trim() !== '' || logDateInput.value !== '' ||
+      (t !== '' && parseInt(t, 10) !== 8);
+    logRefreshBtn.classList.toggle('active', hasData);
+  }
+  [logDuration, logTarget, logDateInput].forEach(el => {
+    el.addEventListener('input', syncRefreshBtn);
+    el.addEventListener('change', syncRefreshBtn);
+  });
+  syncRefreshBtn();
   let logEntryCount = 0;
   let logEditingId = null;
   let logEntries = [];
@@ -2317,7 +2419,7 @@
         return;
       }
       if (state.clockIn) document.getElementById('clockIn').value = state.clockIn;
-      if (state.targetHours) document.getElementById('targetHours').value = state.targetHours;
+      if (state.targetHours) { document.getElementById('targetHours').value = state.targetHours; capTargetHours(); }
       if (Array.isArray(state.breaks)) {
         breaksContainer.innerHTML = '';
         breakCount = 0;
@@ -2349,9 +2451,18 @@
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
   }
-  logTarget.addEventListener('input', () => clampField(logTarget, 99));
-  enableArrowKeyStep(logTarget, 0, 99);
-  enableArrowKeyStep(document.getElementById('targetHours'), 0, 99, 0.25);
+  // Target hours can't exceed a full day.
+  const MAX_TARGET_HOURS = 24;
+  const targetHoursInput = document.getElementById('targetHours');
+  function capTargetHours() {
+    const v = parseFloat(targetHoursInput.value);
+    if (v > MAX_TARGET_HOURS) targetHoursInput.value = String(MAX_TARGET_HOURS);
+  }
+  targetHoursInput.addEventListener('input', capTargetHours);
+  targetHoursInput.addEventListener('change', capTargetHours);
+  logTarget.addEventListener('input', () => clampField(logTarget, MAX_TARGET_HOURS));
+  enableArrowKeyStep(logTarget, 0, MAX_TARGET_HOURS);
+  enableArrowKeyStep(targetHoursInput, 0, MAX_TARGET_HOURS, 0.25);
 
   function parseDurationText(text) {
     const clean = (text || '').trim();
@@ -2451,6 +2562,7 @@
     addLogEntryBtn.textContent = 'Update';
     addLogEntryBtn.classList.add('editing');
     logDuration.focus();
+    syncRefreshBtn();
   }
 
   function cancelEditLogEntry() {
@@ -2459,7 +2571,22 @@
     addLogEntryBtn.classList.remove('editing');
     logDuration.value = '';
     logDateInput.value = '';
+    syncRefreshBtn();
   }
+
+  // 🔄️ resets only the Daily Work Log input fields (and leaves edit mode)
+  logRefreshBtn.addEventListener('click', () => {
+    cancelEditLogEntry();
+    logTarget.value = '8';
+    syncRefreshBtn();
+  });
+
+  // Version badge reloads the whole page
+  const versionBadge = document.getElementById('versionBadge');
+  versionBadge.addEventListener('click', () => location.reload());
+  versionBadge.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.reload(); }
+  });
 
   addLogEntryBtn.addEventListener('click', () => {
     const parsed = parseDurationText(logDuration.value);
@@ -2495,6 +2622,7 @@
       logDuration.value = '';
       logDateInput.value = '';
       logDuration.focus();
+      syncRefreshBtn();
     }
 
     renderLogList();
@@ -2856,7 +2984,7 @@
         continue;
       }
       const n = parseInt(seg, 10);
-      if (!isNaN(n) && /^-?\d{1,2}$/.test(seg)) target = n;
+      if (!isNaN(n) && /^-?\d{1,2}$/.test(seg)) target = Math.min(n, MAX_TARGET_HOURS);
     }
 
     return { hh, mm, ss, target, date };
@@ -2956,6 +3084,25 @@
     calendarMonth = refDate.getMonth();
   }
 
+  function applyCalendarLive() {
+    const cell = document.querySelector('#calendarGrid .calendar-cell.today');
+    if (!cell) return;
+    if (calLiveProgress === null) {
+      if (cell.classList.contains('live')) {
+        cell.classList.remove('live', 'live-done');
+        cell.style.removeProperty('--live-pct');
+        if (cell._baseTitle !== undefined) cell.title = cell._baseTitle;
+      }
+      return;
+    }
+    if (cell._baseTitle === undefined) cell._baseTitle = cell.title;
+    cell.classList.add('live');
+    cell.classList.toggle('live-done', calLiveProgress >= 100);
+    cell.style.setProperty('--live-pct', calLiveProgress.toFixed(2) + '%');
+    const t = `Today: ${Math.floor(calLiveProgress)}% of shift done. ${cell._baseTitle}`;
+    if (cell.title !== t) cell.title = t;
+  }
+
   function renderCalendar() {
     const entriesByDate = {};
     logEntries.forEach(e => {
@@ -3004,10 +3151,12 @@
           logDateInput.value = iso;
           logDuration.value = '';
           logDuration.focus();
+          syncRefreshBtn();
         }
       });
       calendarGrid.appendChild(cell);
     }
+    applyCalendarLive();
   }
 
   calendarPrevBtn.addEventListener('click', () => {
