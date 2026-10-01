@@ -154,6 +154,13 @@
     font-weight: 700;
     color: var(--muted);
   }
+  .log-entries-scroll {
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .log-entries-scroll::-webkit-scrollbar { width: 0; height: 0; }
   .log-row {
     display: grid;
     grid-template-columns: 28px 1fr 72px 82px 44px;
@@ -354,8 +361,17 @@
       overflow-x: hidden;
       scrollbar-width: none;      /* Firefox */
       -ms-overflow-style: none;   /* legacy Edge/IE */
+      /* Settles the scroll on a card once it's either fully stacked behind
+         the one above it or fully revealed, instead of stopping half-stacked
+         mid-scroll. "proximity" (not "mandatory") only snaps when a flick
+         already lands close to one of those points, so normal scrolling
+         still feels free rather than snapping on every small movement. */
+      scroll-snap-type: y proximity;
     }
     .col::-webkit-scrollbar { width: 0; height: 0; }  /* Chrome/Safari/Edge */
+    .wrap > .col > .card {
+      scroll-snap-align: start;
+    }
   }
   @media (max-width: 1100px) {
     .wrap { grid-template-columns: 1fr 1fr; max-width: 900px; }
@@ -679,10 +695,6 @@
     font-weight: 600;
     padding: 8px;
   }
-  .countdown-body {
-    text-align: center;
-    margin-top: 6px;
-  }
   @keyframes digitFlip {
     0% { transform: rotateX(90deg); opacity: 0.3; }
     60% { transform: rotateX(-14deg); opacity: 1; }
@@ -715,26 +727,6 @@
   @media (prefers-reduced-motion: reduce) {
     .roll-char.roll-anim { animation: none; }
   }
-  .countdown-time {
-    font-size: 38px;
-    font-weight: 800;
-    color: var(--deep);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 1px;
-    perspective: 240px;
-  }
-  .countdown-time .secs {
-    color: var(--sky);
-  }
-  .countdown-sub {
-    margin-top: 8px;
-    font-size: 12.5px;
-    color: var(--muted);
-  }
-  .countdown-sub.done {
-    color: var(--good);
-    font-weight: 700;
-  }
   .worked-row {
     margin-top: 14px;
     padding-top: 14px;
@@ -752,39 +744,6 @@
     color: var(--deep);
     font-variant-numeric: tabular-nums;
     perspective: 160px;
-  }
-  .progress-wrap {
-    margin-top: 16px;
-  }
-  .progress-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11.5px;
-    color: var(--muted);
-    font-weight: 600;
-    margin-bottom: 6px;
-  }
-  .progress-labels .pct {
-    color: var(--deep);
-    font-weight: 800;
-  }
-  .progress-track {
-    width: 100%;
-    height: 10px;
-    background: var(--sky-light);
-    border-radius: 999px;
-    overflow: hidden;
-    border: 1px solid var(--line);
-  }
-  .progress-fill {
-    height: 100%;
-    width: 0%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, var(--sky) 0%, #0F3A63 100%);
-    transition: width 0.6s ease, background 0.5s ease;
-  }
-  .progress-fill.complete {
-    background: linear-gradient(90deg, #22C57A 0%, #1E8E5A 100%);
   }
   .date-banner {
     font-size: 11px;
@@ -1364,11 +1323,11 @@
   .clock-svg.clock-done .clock-progress { filter: drop-shadow(0 0 3px var(--good)); }
   .clock-status {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px 12px;
-    margin-top: 12px;
+    gap: 8px;
+    margin-top: 14px;
   }
   .clock-pill {
     font-size: 12px;
@@ -1383,7 +1342,8 @@
   .clock-pill.working { color: #fff; background: var(--sky); border-color: transparent; }
   .clock-pill.onbreak { color: #fff; background: #B08968; border-color: transparent; }
   .clock-pill.done { color: #fff; background: var(--good); border-color: transparent; }
-  .clock-info { font-size: 12.5px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .clock-info { font-size: clamp(20px, 2.4vw, 28px); font-weight: 800; line-height: 1.2; text-align: center; color: var(--deep); letter-spacing: 0.3px; font-variant-numeric: tabular-nums; }
+  .clock-info.rolling { white-space: nowrap; }
   .clock-legend {
     display: flex;
     justify-content: center;
@@ -1407,7 +1367,7 @@
 </head>
 <body>
 <header class="app-header">
-  <span class="app-header-title">⏰ Clock me Out<span class="version-badge">v2.177</span></span>
+  <span class="app-header-title">⏰ Clock me Out<span class="version-badge">v2.181</span></span>
   <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
 </header>
 <script>
@@ -1420,40 +1380,6 @@
 </script>
 <div class="wrap">
   <div class="col">
-    <div class="card clock-card" id="clockCard">
-      <div class="card-title">
-        <span>🕰️ Live Clock</span>
-        <span class="clock-digital" id="clockDigital">--:--:--</span>
-      </div>
-      <div class="clock-wrap">
-        <svg id="analogClock" class="clock-svg clock-idle" viewBox="0 0 200 200" role="img" aria-label="Analog clock showing shift progress and breaks">
-          <circle class="clock-face" cx="100" cy="100" r="96"/>
-          <circle class="clock-track" cx="100" cy="100" r="86"/>
-          <path class="clock-plan" id="clockPlan" fill="none"/>
-          <path class="clock-progress" id="clockProgress" fill="none"/>
-          <path class="clock-overtime" id="clockOvertime" fill="none"/>
-          <g id="clockBreaks"></g>
-          <g id="clockTicks"></g>
-          <g id="clockMarkers"></g>
-          <g class="clock-hand clock-hour" id="clockHour"><line x1="100" y1="106" x2="100" y2="68"/></g>
-          <g class="clock-hand clock-minute" id="clockMinute"><line x1="100" y1="108" x2="100" y2="50"/></g>
-          <g class="clock-hand clock-second" id="clockSecond"><line x1="100" y1="114" x2="100" y2="40"/></g>
-          <circle class="clock-cap" cx="100" cy="100" r="4.5"/>
-          <circle class="clock-cap-dot" cx="100" cy="100" r="1.8"/>
-        </svg>
-      </div>
-      <div class="clock-status">
-        <span class="clock-pill" id="clockPill">Set clock-in time</span>
-        <span class="clock-info" id="clockInfo">Enter your clock-in time to start</span>
-      </div>
-      <div class="clock-legend">
-        <span><i class="lg-progress"></i>Progress</span>
-        <span><i class="lg-break"></i>Break</span>
-        <span><i class="lg-in"></i>In</span>
-        <span><i class="lg-out"></i>Out</span>
-      </div>
-    </div>
-
     <div class="card">
       <div class="card-title">
         <span>📅 Daily Work Log</span>
@@ -1497,7 +1423,7 @@
           <span>Log</span>
           <span></span>
         </div>
-        <div id="logEntriesContainer"></div>
+        <div id="logEntriesContainer" class="log-entries-scroll"></div>
       </div>
 
       <div id="calendarViewPanel" style="display:none;">
@@ -1551,57 +1477,6 @@
       </div>
     </div>
 
-    <div class="card countdown-card">
-      <div class="card-title">
-        <span>⏳ Time Remaining</span>
-      </div>
-      <div class="countdown-body">
-        <div class="countdown-time" id="countdownTime">--:--:--</div>
-        <div class="countdown-sub" id="countdownSub">📌 Set your clock-in time above to see this fill in</div>
-      </div>
-      <div class="worked-row">
-        <span>⏱️ Elapsed Time: <b id="elapsedOut">--:--:--</b></span>
-        <span>✅ Hours Worked: <b id="totalHoursOut">--</b></span>
-      </div>
-      <div class="progress-wrap">
-        <div class="progress-labels">
-          <span>📊 Progress</span>
-          <span class="pct" id="progressPct">0%</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill" id="progressFill"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="app-footer footer-desktop">© 2026 Basil Melepat · Designed for You</div>
-  </div>
-
-  <div class="col">
-    <div class="card result" id="resultCard">
-      <div class="particles" aria-hidden="true">
-        <span style="left:8%; width:5px; height:5px; animation-delay:0s; animation-duration:4.5s;"></span>
-        <span style="left:20%; width:3px; height:3px; animation-delay:0.8s; animation-duration:5.2s;"></span>
-        <span style="left:34%; width:4px; height:4px; animation-delay:1.6s; animation-duration:4s;"></span>
-        <span style="left:48%; width:6px; height:6px; animation-delay:0.4s; animation-duration:5.8s;"></span>
-        <span style="left:60%; width:3px; height:3px; animation-delay:2.2s; animation-duration:4.6s;"></span>
-        <span style="left:72%; width:5px; height:5px; animation-delay:1.2s; animation-duration:5s;"></span>
-        <span style="left:84%; width:4px; height:4px; animation-delay:2.8s; animation-duration:4.3s;"></span>
-        <span style="left:92%; width:3px; height:3px; animation-delay:0.2s; animation-duration:5.5s;"></span>
-      </div>
-      <div class="card-title">
-        <span>🏁 Clock-Out Time</span>
-      </div>
-      <div class="result-body">
-        <div class="time" id="clockOutTime">--:--</div>
-        <div class="clockout-date-note" id="clockOutDateNote" style="display:none;"></div>
-        <div class="detail" id="resultDetail"></div>
-      </div>
-      <div class="breakdown">
-        <span>💼 Hours Worked: <b id="workHoursOut">--</b></span>
-        <span>☕ Break Time: <b id="breakHoursOut">--</b></span>
-      </div>
-    </div>
     <div class="card">
       <div class="card-title" id="lateTitleRow">
         <span>⏱️ Running Late Balance</span>
@@ -1651,6 +1526,74 @@
         <div class="early-result" id="earlyResult">Enter a time above to see the projected impact on your hours.</div>
       </div>
     </div>
+
+    <div class="app-footer footer-desktop">© 2026 Basil Melepat · Designed for You</div>
+  </div>
+
+  <div class="col">
+    <div class="card clock-card" id="clockCard">
+      <div class="card-title">
+        <span>🕰️ Live Clock</span>
+        <span class="clock-digital" id="clockDigital">--:--:--</span>
+      </div>
+      <div class="clock-wrap">
+        <svg id="analogClock" class="clock-svg clock-idle" viewBox="0 0 200 200" role="img" aria-label="Analog clock showing shift progress and breaks">
+          <circle class="clock-face" cx="100" cy="100" r="96"/>
+          <circle class="clock-track" cx="100" cy="100" r="86"/>
+          <path class="clock-plan" id="clockPlan" fill="none"/>
+          <path class="clock-progress" id="clockProgress" fill="none"/>
+          <path class="clock-overtime" id="clockOvertime" fill="none"/>
+          <g id="clockBreaks"></g>
+          <g id="clockTicks"></g>
+          <g id="clockMarkers"></g>
+          <g class="clock-hand clock-hour" id="clockHour"><line x1="100" y1="106" x2="100" y2="68"/></g>
+          <g class="clock-hand clock-minute" id="clockMinute"><line x1="100" y1="108" x2="100" y2="50"/></g>
+          <g class="clock-hand clock-second" id="clockSecond"><line x1="100" y1="114" x2="100" y2="40"/></g>
+          <circle class="clock-cap" cx="100" cy="100" r="4.5"/>
+          <circle class="clock-cap-dot" cx="100" cy="100" r="1.8"/>
+        </svg>
+      </div>
+      <div class="clock-status">
+        <span class="clock-pill" id="clockPill">Set clock-in time</span>
+        <span class="clock-info" id="clockInfo">Enter your clock-in time to start</span>
+      </div>
+      <div class="clock-legend">
+        <span><i class="lg-progress"></i>Progress</span>
+        <span><i class="lg-break"></i>Break</span>
+        <span><i class="lg-in"></i>In</span>
+        <span><i class="lg-out"></i>Out</span>
+      </div>
+      <div class="worked-row">
+        <span>⏱️ Elapsed Time: <b id="elapsedOut">--:--:--</b></span>
+        <span>✅ Hours Worked: <b id="totalHoursOut">--</b></span>
+      </div>
+    </div>
+
+    <div class="card result" id="resultCard">
+      <div class="particles" aria-hidden="true">
+        <span style="left:8%; width:5px; height:5px; animation-delay:0s; animation-duration:4.5s;"></span>
+        <span style="left:20%; width:3px; height:3px; animation-delay:0.8s; animation-duration:5.2s;"></span>
+        <span style="left:34%; width:4px; height:4px; animation-delay:1.6s; animation-duration:4s;"></span>
+        <span style="left:48%; width:6px; height:6px; animation-delay:0.4s; animation-duration:5.8s;"></span>
+        <span style="left:60%; width:3px; height:3px; animation-delay:2.2s; animation-duration:4.6s;"></span>
+        <span style="left:72%; width:5px; height:5px; animation-delay:1.2s; animation-duration:5s;"></span>
+        <span style="left:84%; width:4px; height:4px; animation-delay:2.8s; animation-duration:4.3s;"></span>
+        <span style="left:92%; width:3px; height:3px; animation-delay:0.2s; animation-duration:5.5s;"></span>
+      </div>
+      <div class="card-title">
+        <span>🏁 Clock-Out Time</span>
+      </div>
+      <div class="result-body">
+        <div class="time" id="clockOutTime">--:--</div>
+        <div class="clockout-date-note" id="clockOutDateNote" style="display:none;"></div>
+        <div class="detail" id="resultDetail"></div>
+      </div>
+      <div class="breakdown">
+        <span>💼 Hours Worked: <b id="workHoursOut">--</b></span>
+        <span>☕ Break Time: <b id="breakHoursOut">--</b></span>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1936,13 +1879,9 @@
     workHoursOut: document.getElementById('workHoursOut'),
     breakHoursOut: document.getElementById('breakHoursOut'),
     clockOutDateNote: document.getElementById('clockOutDateNote'),
-    countdownTime: document.getElementById('countdownTime'),
-    countdownSub: document.getElementById('countdownSub'),
     elapsedOut: document.getElementById('elapsedOut'),
     totalHoursOut: document.getElementById('totalHoursOut'),
     resultCard: document.getElementById('resultCard'),
-    progressFill: document.getElementById('progressFill'),
-    progressPct: document.getElementById('progressPct'),
     earlyResult: document.getElementById('earlyResult'),
     earlyTime: document.getElementById('earlyTime'),
     earlyCountdownWrap: document.getElementById('earlyCountdownWrap'),
@@ -2070,7 +2009,7 @@
 
     const inD = state.clockInDate, outD = state.clockOutDate;
     const svg = clockEls.svg;
-    let stateClass = 'clock-idle', pillClass = 'clock-pill', pillText, infoText;
+    let stateClass = 'clock-idle', pillClass = 'clock-pill', pillText, infoText, rollInfo = false;
 
     // Markers (clock-in / clock-out / planned early departure)
     const earlyD = state.earlyDepartureDate;
@@ -2132,6 +2071,7 @@
         pillClass += onBreak ? ' onbreak' : ' working';
         pillText = onBreak ? '☕ On break' : 'Working';
         infoText = `${pct}% done · ${secondsToHMS((outD - now) / 1000).str} left`;
+        rollInfo = true;
       }
     }
 
@@ -2139,7 +2079,15 @@
     if (svg.getAttribute('class') !== cls) svg.setAttribute('class', cls);
     if (clockEls.pill.className !== pillClass) clockEls.pill.className = pillClass;
     setTextIfChanged(clockEls.pill, pillText);
-    setTextIfChanged(clockEls.info, infoText);
+    if (rollInfo) {
+      // Live countdown: each changed digit rolls in (same roll as the Clock-Out Time card)
+      renderFlipTime(clockEls.info, infoText, { charClass: 'roll-char', animClass: 'roll-anim' });
+    } else {
+      // Plain status messages: drop any per-character spans so wording wraps normally
+      if (clockEls.info._flipSpans) { clockEls.info._flipSpans = null; clockEls.info._flipText = null; }
+      setTextIfChanged(clockEls.info, infoText);
+    }
+    clockEls.info.classList.toggle('rolling', rollInfo);
   }
 
   function calculate() {
@@ -3075,23 +3023,22 @@
 
 
 
+  // The old standalone "Time Remaining" card (a big digital countdown, a
+  // subtitle, and a separate progress bar) merged into the Live Clock card:
+  // the analog dial's progress ring is now the one progress indicator, and
+  // the clock's own status pill/info line (see updateClock()) carries the
+  // "time left" text that used to live here. This function still owns the
+  // Elapsed Time / Hours Worked stats and — unrelated to any of that — the
+  // Clock-Out Time card's "exceeded" (goal reached) styling.
   function updateCountdown() {
-    const countdownTime = el.countdownTime;
-    const countdownSub = el.countdownSub;
     const elapsedOut = el.elapsedOut;
     const totalHoursOut = el.totalHoursOut;
     const resultCard = el.resultCard;
 
     if (!state.clockInDate || !state.clockOutDate) {
-      renderFlipTime(countdownTime, '--:--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
-      countdownSub.textContent = '📌 Set your clock-in time above to see this fill in';
-      countdownSub.classList.remove('done');
       renderFlipTime(elapsedOut, '--:--:--');
       renderFlipTime(totalHoursOut, '--');
       resultCard.classList.remove('exceeded');
-      el.progressFill.style.width = '0%';
-      el.progressFill.classList.remove('complete');
-      el.progressPct.textContent = '0%';
       return;
     }
 
@@ -3100,21 +3047,11 @@
     const elapsedSec = Math.max(0, (now - state.clockInDate) / 1000);
 
     if (remainingSec <= 0) {
-      const over = secondsToHMS(-remainingSec);
-      renderFlipTime(countdownTime, '00:00:00', { secsFrom: 6, charClass: 'roll-char', animClass: 'roll-anim' });
-      countdownSub.textContent = `✅ Shift complete. Clocked out ${over.str} ago`;
-      countdownSub.classList.add('done');
       if (!resultCard.classList.contains('exceeded')) {
         resultCard.classList.add('exceeded', 'flip-pulse');
         setTimeout(() => resultCard.classList.remove('flip-pulse'), 500);
       }
     } else {
-      const r = secondsToHMS(remainingSec);
-      renderFlipTime(countdownTime, `${pad(r.h)}:${pad(r.m)}:${pad(r.s)}`, { secsFrom: 6, charClass: 'roll-char', animClass: 'roll-anim' });
-      countdownSub.textContent = now < state.clockInDate
-        ? '⏸️ Awaiting clock-in'
-        : '🏃🏻 until clock-out';
-      countdownSub.classList.remove('done');
       resultCard.classList.remove('exceeded');
     }
 
@@ -3129,19 +3066,6 @@
     const workedM = Math.floor(workedMin % 60);
     const workedS = Math.floor((workedMin * 60) % 60);
     renderFlipTime(totalHoursOut, `${pad(workedH)}:${pad(workedM)}:${pad(workedS)}`);
-
-    // Progress bar: elapsed vs total session duration (work + breaks)
-    const totalSessionSec = Math.max(1, (state.clockOutDate - state.clockInDate) / 1000);
-    const progressRatio = Math.min(1, elapsedSec / totalSessionSec);
-    const progressFill = el.progressFill;
-    const progressPct = el.progressPct;
-    progressFill.style.width = `${(progressRatio * 100).toFixed(1)}%`;
-    progressPct.textContent = `${Math.round(progressRatio * 100)}%`;
-    if (remainingSec <= 0) {
-      progressFill.classList.add('complete');
-    } else {
-      progressFill.classList.remove('complete');
-    }
   }
 
   document.getElementById('clockIn').addEventListener('input', () => { calculate(); saveShiftState(); });
