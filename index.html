@@ -174,12 +174,12 @@
     color: var(--muted);
   }
   .log-entries-scroll {
-    max-height: 320px;
     overflow-y: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
   .log-entries-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .log-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 28px 8px; }
   .log-row {
     display: grid;
     grid-template-columns: 28px 1fr 72px 82px 44px;
@@ -398,7 +398,6 @@
   }
   @media (max-width: 1100px) {
     .wrap { grid-template-columns: 1fr 1fr; max-width: 900px; }
-    .col:nth-child(3) { grid-column: 1 / -1; }
   }
   @media (max-width: 780px) {
     body { padding: 16px 12px; }
@@ -981,30 +980,6 @@
     transition: background .15s;
   }
   .modal-import-btn:hover { background: #0F3A63; }
-  .log-view-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 14px;
-    border-bottom: 1.5px solid var(--line);
-  }
-  .log-tab {
-    flex: 1;
-    padding: 9px 6px;
-    background: none;
-    border: none;
-    border-bottom: 2.5px solid transparent;
-    font-size: 12.5px;
-    font-weight: 700;
-    color: var(--muted);
-    cursor: pointer;
-    margin-bottom: -1.5px;
-    transition: color .15s, border-color .15s;
-  }
-  .log-tab:hover { color: var(--deep2); }
-  .log-tab.active {
-    color: var(--sky);
-    border-bottom-color: var(--sky);
-  }
   .calendar-nav {
     display: flex;
     align-items: center;
@@ -1406,11 +1381,85 @@
   @media (prefers-reduced-motion: reduce) {
     .clock-second { transition: none; }
   }
+  /* ---- Overview / Daily Log views ---- */
+  .wrap[hidden] { display: none; }
+  .wrap.wrap-overview,
+  .wrap.wrap-log { grid-template-columns: 1fr 1.05fr 1fr; max-width: 1360px; }
+  .view-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .view-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--sky-light);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .view-tab {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .view-tab:hover { color: var(--deep); }
+  .view-tab.active { background: var(--card); color: var(--deep); box-shadow: 0 1px 4px rgba(11, 42, 74, 0.14); }
+  .log-chip {
+    border: 1px solid var(--good);
+    background: #E4F8ED;
+    color: var(--good);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    transition: transform 0.15s ease;
+  }
+  .log-chip:hover { transform: translateY(-1px); }
+  .log-chip[hidden] { display: none; }
+  .log-chip.behind { background: #FFF3E8; border-color: #F0C48A; color: #9A5A0F; }
+  body.dark-mode .view-tab.active { box-shadow: none; }
+  body.dark-mode .log-chip { background: rgba(62, 208, 138, 0.14); color: #6EEBB0; }
+  body.dark-mode .log-chip.behind { background: rgba(240, 196, 138, 0.12); border-color: #F0C48A; color: #F5C77E; }
+  @media (max-width: 1100px) {
+    .wrap.wrap-overview,
+    .wrap.wrap-log { grid-template-columns: 1fr 1fr; max-width: 900px; }
+    .wrap.wrap-overview > .col:nth-child(3),
+    .wrap.wrap-log > .col:nth-child(3) { grid-column: 1 / -1; }
+  }
+  @media (max-width: 780px) {
+    .wrap.wrap-overview,
+    .wrap.wrap-log { grid-template-columns: 1fr; }
+    /* Phones: tabs drop to their own full-width row under the title */
+    .app-header { flex-wrap: wrap; row-gap: 10px; }
+    .view-bar { order: 3; width: 100%; flex-wrap: nowrap; }
+    .view-tabs { flex: 1 1 auto; }
+    .view-tab { flex: 1; padding: 9px 6px; white-space: nowrap; }
+    .log-chip { flex: none; padding: 6px 10px; }
+  }
 </style>
 </head>
 <body>
 <header class="app-header">
-  <span class="app-header-title">⏰ Clock me Out<span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.192</span></span>
+  <span class="app-header-title">⏰ Clock me Out<span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.196</span></span>
+  <div class="view-bar" id="viewBar" data-view="overview">
+    <div class="view-tabs" role="tablist" aria-label="Views">
+      <button class="view-tab active" id="tabOverview" type="button" role="tab" aria-selected="true">📊 Overview</button>
+      <button class="view-tab" id="tabLog" type="button" role="tab" aria-selected="false">📅 Daily Log</button>
+    </div>
+    <button class="log-chip" id="logChip" type="button" hidden title="Open Daily Log"></button>
+  </div>
   <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
 </header>
 <script>
@@ -1421,81 +1470,7 @@
     }
   })();
 </script>
-<div class="wrap">
-  <div class="col">
-    <div class="card">
-      <div class="card-title">
-        <span>📅 Daily Work Log</span>
-        <button class="collapse-btn" id="toggleDailyLogBtn" type="button" aria-label="Minimize Daily Work Log">⬆️</button>
-      </div>
-
-      <div id="dailyLogBody">
-      <div class="log-input-card">
-        <div class="log-input-box">
-          <label for="logDuration">Hours Clocked</label>
-          <input type="text" id="logDuration" class="log-duration-input" placeholder="0h 0m 0s">
-        </div>
-        <div class="log-input-box">
-          <label for="logTarget">Target Hours</label>
-          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" id="logTarget" class="log-target-input" value="8">
-          <span class="input-suffix">hrs</span>
-        </div>
-        <div class="log-input-box log-date-box">
-          <label for="logDateInput">Date (optional)</label>
-          <input type="date" id="logDateInput" class="log-duration-input">
-        </div>
-        <div class="log-add-row">
-          <button class="log-add-btn" id="addLogEntryBtn" type="button">➕ Add Day</button>
-          <button class="log-refresh-btn" id="logRefreshBtn" type="button" aria-label="Reset input fields" title="Reset fields">🔄️</button>
-        </div>
-      </div>
-
-      <div class="log-io-row">
-        <button class="log-io-btn" id="logCopyBtn" type="button">📄 Copy Log</button>
-        <button class="log-io-btn" id="logBulkBtn" type="button">🗃️ Bulk Import</button>
-        <button class="log-io-btn log-clear-all-btn" id="clearLogBtn" type="button" style="display:none;" aria-label="Clear all logged days">🗑️ Clear All</button>
-      </div>
-
-      <div class="log-view-tabs" id="logViewTabs" style="display:none;">
-        <button class="log-tab active" id="tableViewTab" type="button">📋 Table View</button>
-        <button class="log-tab" id="calendarViewTab" type="button" style="display:none;">📅 Calendar View</button>
-      </div>
-
-      <div id="logListWrap" style="display:none;">
-        <div class="log-list-header">
-          <span>Day</span>
-          <span>Clocked</span>
-          <span>Target</span>
-          <span>Log</span>
-          <span></span>
-        </div>
-        <div id="logEntriesContainer" class="log-entries-scroll"></div>
-      </div>
-
-      <div id="calendarViewPanel" style="display:none;">
-        <div class="calendar-nav">
-          <button class="calendar-nav-btn" id="calendarPrevBtn" type="button" aria-label="Previous month">‹</button>
-          <span class="calendar-month-label" id="calendarMonthLabel">Month Year</span>
-          <button class="calendar-nav-btn" id="calendarNextBtn" type="button" aria-label="Next month">›</button>
-        </div>
-        <div class="calendar-weekdays">
-          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-        </div>
-        <div class="calendar-grid" id="calendarGrid"></div>
-        <div class="calendar-legend">
-          <span><i class="calendar-dot ahead"></i> Ahead / On target</span>
-          <span><i class="calendar-dot short"></i> Short</span>
-          <span><i class="calendar-dot none"></i> No entry</span>
-        </div>
-      </div>
-
-      <div class="log-summary clear" id="logSummary">Log your daily hours to track your running-late balance automatically.</div>
-      <button class="sync-btn" id="syncLogBtn" type="button" style="display:none;">🔄️ Sync to Running Late Balance</button>
-      <button class="sync-btn early-sync-btn" id="syncEarlyLogBtn" type="button" style="display:none;">🌇 Plan an early Departure</button>
-      </div>
-    </div>
-  </div>
-
+<div class="wrap wrap-overview" id="viewOverview">
   <div class="col">
     <div class="card">
       <div class="card-title">
@@ -1617,7 +1592,8 @@
         <span>✅ Hours Worked: <b id="totalHoursOut">--</b></span>
       </div>
     </div>
-
+  </div>
+  <div class="col">
     <div class="card result" id="resultCard">
       <div class="particles" aria-hidden="true">
         <span style="left:8%; width:5px; height:5px; animation-delay:0s; animation-duration:4.5s;"></span>
@@ -1642,7 +1618,89 @@
         <span>☕ Break Time: <b id="breakHoursOut">--</b></span>
       </div>
     </div>
+  </div>
+</div>
+<div class="wrap wrap-log" id="viewLog" hidden>
+  <div class="col">
+    <div class="card">
+      <div class="card-title">
+        <span>📅 Daily Work Log</span>
+        <button class="collapse-btn" id="toggleDailyLogBtn" type="button" aria-label="Minimize Daily Work Log">⬆️</button>
+      </div>
 
+      <div id="dailyLogBody">
+      <div class="log-input-card">
+        <div class="log-input-box">
+          <label for="logDuration">Hours Clocked</label>
+          <input type="text" id="logDuration" class="log-duration-input" placeholder="0h 0m 0s">
+        </div>
+        <div class="log-input-box">
+          <label for="logTarget">Target Hours</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" id="logTarget" class="log-target-input" value="8">
+          <span class="input-suffix">hrs</span>
+        </div>
+        <div class="log-input-box log-date-box">
+          <label for="logDateInput">Date (optional)</label>
+          <input type="date" id="logDateInput" class="log-duration-input">
+        </div>
+        <div class="log-add-row">
+          <button class="log-add-btn" id="addLogEntryBtn" type="button">➕ Add Day</button>
+          <button class="log-refresh-btn" id="logRefreshBtn" type="button" aria-label="Reset input fields" title="Reset fields">🔄️</button>
+        </div>
+      </div>
+
+      <div class="log-io-row">
+        <button class="log-io-btn" id="logCopyBtn" type="button">📄 Copy Log</button>
+        <button class="log-io-btn" id="logBulkBtn" type="button">🗃️ Bulk Import</button>
+        <button class="log-io-btn log-clear-all-btn" id="clearLogBtn" type="button" style="display:none;" aria-label="Clear all logged days">🗑️ Clear All</button>
+      </div>
+
+      <div class="log-summary clear" id="logSummary">Log your daily hours to track your running-late balance automatically.</div>
+      <button class="sync-btn" id="syncLogBtn" type="button" style="display:none;">🔄️ Sync to Running Late Balance</button>
+      <button class="sync-btn early-sync-btn" id="syncEarlyLogBtn" type="button" style="display:none;">🌇 Plan an early Departure</button>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-title">
+        <span>📋 Table View</span>
+      </div>
+      <div class="log-empty" id="logTableEmpty">No days logged yet. Add one on the left.</div>
+      <div id="logListWrap" style="display:none;">
+        <div class="log-list-header">
+          <span>Day</span>
+          <span>Clocked</span>
+          <span>Target</span>
+          <span>Log</span>
+          <span></span>
+        </div>
+        <div id="logEntriesContainer" class="log-entries-scroll"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-title">
+        <span>📅 Calendar View</span>
+      </div>
+      <div id="calendarViewPanel">
+        <div class="calendar-nav">
+          <button class="calendar-nav-btn" id="calendarPrevBtn" type="button" aria-label="Previous month">‹</button>
+          <span class="calendar-month-label" id="calendarMonthLabel">Month Year</span>
+          <button class="calendar-nav-btn" id="calendarNextBtn" type="button" aria-label="Next month">›</button>
+        </div>
+        <div class="calendar-weekdays">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="calendar-legend">
+          <span><i class="calendar-dot ahead"></i> Ahead / On target</span>
+          <span><i class="calendar-dot short"></i> Short</span>
+          <span><i class="calendar-dot none"></i> No entry</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2024,12 +2082,16 @@
   }
 
   let calLiveProgress = null; // 0-100 while today's shift is active, else null
+  let calTodayCell = null;    // cached today's cell (re-queried when the calendar re-renders)
   let clockSecTurns = 0, clockLastSec = -1, clockSnap = true, clockMarkerSig = '', clockBreakSig = '';
 
   function updateClock() {
     const now = new Date();
     const h = now.getHours(), m = now.getMinutes(), sec = now.getSeconds();
-    const rot = (node, deg) => { node.style.transform = `rotate(${deg}deg)`; };
+    const rot = (node, deg) => {
+      const t = `rotate(${deg}deg)`;
+      if (node._rot !== t) { node._rot = t; node.style.transform = t; }
+    };
 
     // Hands
     rot(clockEls.hour, ((h % 12) + m / 60 + sec / 3600) * 30);
@@ -2498,8 +2560,8 @@
 
   function renderLogList() {
     logEntriesContainer.innerHTML = '';
-    const shouldShowTable = logEntries.length > 0 && (typeof activeLogView === 'undefined' || activeLogView === 'table');
-    logListWrap.style.display = shouldShowTable ? 'block' : 'none';
+    logListWrap.style.display = logEntries.length ? 'block' : 'none';
+    document.getElementById('logTableEmpty').style.display = logEntries.length ? 'none' : 'block';
     clearLogBtn.style.display = logEntries.length ? 'block' : 'none';
 
     const sortedEntries = logEntries.slice().sort((a, b) => {
@@ -2541,15 +2603,12 @@
         logEntries = logEntries.filter(e => e.id !== parseInt(btn.dataset.remove, 10));
         if (logEditingId === parseInt(btn.dataset.remove, 10)) cancelEditLogEntry();
         saveLogEntries();
-        updateCalendarViewVisibility();
         renderLogList();
         calculateLog();
       });
     });
 
-    if (typeof activeLogView !== 'undefined' && activeLogView === 'calendar' && typeof renderCalendar === 'function') {
-      renderCalendar();
-    }
+    if (calendarYear !== null) renderCalendar();
   }
 
   function startEditLogEntry(id) {
@@ -2628,7 +2687,6 @@
     renderLogList();
     calculateLog();
     saveLogEntries();
-    updateCalendarViewVisibility();
   });
 
   clearLogBtn.addEventListener('click', () => {
@@ -2639,9 +2697,9 @@
     logEntryCount = 0;
     if (logEditingId !== null) cancelEditLogEntry();
     saveLogEntries();
-    updateCalendarViewVisibility();
     renderLogList();
     calculateLog();
+    refreshCalendar(true);
   });
 
   // Single pass over logEntries producing the total clocked-vs-target diff in
@@ -2667,10 +2725,49 @@
   }
 
   let logSyncMode = null;
+  let currentView = 'overview';
+
+  // Compact duration for the chip: "2h 5m" from an hour up, "10m 50s" below it.
+  function formatChipDuration(totalMinutes) {
+    const t = Math.round(totalMinutes * 60);
+    const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+    if (h) return `${h}h ${m}m`;
+    if (m) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+
+  // Small balance chip shown on Overview: running total of the Daily Log.
+  function updateLogChip() {
+    const chip = document.getElementById('logChip');
+    if (!chip) return;
+    if (logEntries.length === 0 || currentView === 'log') { chip.hidden = true; return; }
+    const diffMin = getLogDiffSeconds() / 60;
+    chip.classList.toggle('behind', diffMin < -0.5);
+    if (diffMin > 0.5) chip.textContent = `Log: +${formatChipDuration(diffMin)} ahead`;
+    else if (diffMin < -0.5) chip.textContent = `Log: −${formatChipDuration(-diffMin)} behind`;
+    else chip.textContent = 'Log: on target';
+    chip.hidden = false;
+  }
+
+  function switchView(name, persist) {
+    currentView = name === 'log' ? 'log' : 'overview';
+    const isLog = currentView === 'log';
+    document.getElementById('viewOverview').hidden = isLog;
+    document.getElementById('viewLog').hidden = !isLog;
+    document.getElementById('viewBar').dataset.view = currentView;
+    const tabO = document.getElementById('tabOverview'), tabL = document.getElementById('tabLog');
+    tabO.classList.toggle('active', !isLog); tabO.setAttribute('aria-selected', String(!isLog));
+    tabL.classList.toggle('active', isLog);  tabL.setAttribute('aria-selected', String(isLog));
+    updateLogChip();
+    if (persist !== false) { try { localStorage.setItem('cmoView', currentView); } catch (e) { /* storage unavailable */ } }
+    window.scrollTo(0, 0);
+    syncDesktopMeasurements(); // the newly shown view couldn't be measured while hidden
+  }
 
   function calculateLog() {
     const summary = document.getElementById('logSummary');
     summary.classList.remove('short', 'clear');
+    updateLogChip();
 
     if (logEntries.length === 0) {
       summary.classList.add('clear');
@@ -2725,6 +2822,7 @@
     const wholeMin = Math.floor(backlogMin);
     const secs = Math.round((backlogMin - wholeMin) * 60);
 
+    switchView('overview');
     if (!state.lateSectionActive) {
       document.getElementById('addLatePlanBtn').click();
     }
@@ -2743,6 +2841,7 @@
       calculate();
     }
     if (!state.clockOutDate) return;
+    switchView('overview');
 
     const suggestedDate = new Date(state.clockOutDate.getTime());
     suggestedDate.setMinutes(suggestedDate.getMinutes() - aheadMin);
@@ -3010,7 +3109,7 @@
       saveLogEntries();
       renderLogList();
       calculateLog();
-      updateCalendarViewVisibility();
+      refreshCalendar(true);
       closeBulkModal();
     } else {
       logBulkFeedback.className = 'log-paste-feedback error';
@@ -3018,10 +3117,7 @@
     }
   });
 
-  // ---- Table / Calendar Tabs ----
-  const logViewTabs = document.getElementById('logViewTabs');
-  const tableViewTab = document.getElementById('tableViewTab');
-  const calendarViewTab = document.getElementById('calendarViewTab');
+  // ---- Calendar (always shown next to the table) ----
   const calendarViewPanel = document.getElementById('calendarViewPanel');
   const calendarPrevBtn = document.getElementById('calendarPrevBtn');
   const calendarNextBtn = document.getElementById('calendarNextBtn');
@@ -3029,36 +3125,13 @@
   const calendarGrid = document.getElementById('calendarGrid');
   let calendarYear = null;
   let calendarMonth = null;
-  let activeLogView = 'table';
 
-  function updateCalendarViewVisibility() {
-    const hasEntries = logEntries.length > 0;
-    const hasDatedEntries = logEntries.some(e => e.date);
-
-    logViewTabs.style.display = hasEntries ? 'flex' : 'none';
-    calendarViewTab.style.display = hasDatedEntries ? 'block' : 'none';
-
-    // If the calendar tab disappears while active (e.g. all dated entries removed), fall back to table.
-    if (!hasDatedEntries && activeLogView === 'calendar') {
-      switchLogView('table');
-    }
+  // Re-draw the calendar after the log changes. jumpToLatest moves it to the
+  // month of the newest dated entry (first load, bulk import, clear all).
+  function refreshCalendar(jumpToLatest) {
+    if (calendarYear === null || jumpToLatest) setCalendarToLatestEntryMonth();
+    renderCalendar();
   }
-
-  function switchLogView(view) {
-    activeLogView = view;
-    const showCalendar = view === 'calendar';
-    tableViewTab.classList.toggle('active', !showCalendar);
-    calendarViewTab.classList.toggle('active', showCalendar);
-    logListWrap.style.display = showCalendar ? 'none' : (logEntries.length ? 'block' : 'none');
-    calendarViewPanel.style.display = showCalendar ? 'block' : 'none';
-    if (showCalendar) {
-      setCalendarToLatestEntryMonth();
-      renderCalendar();
-    }
-  }
-
-  tableViewTab.addEventListener('click', () => switchLogView('table'));
-  calendarViewTab.addEventListener('click', () => switchLogView('calendar'));
 
   function getEntryStatus(entry) {
     const clockedSeconds = entry.hh * 3600 + entry.mm * 60 + entry.ss;
@@ -3085,7 +3158,8 @@
   }
 
   function applyCalendarLive() {
-    const cell = document.querySelector('#calendarGrid .calendar-cell.today');
+    if (!calTodayCell || !calTodayCell.isConnected) calTodayCell = document.querySelector('#calendarGrid .calendar-cell.today');
+    const cell = calTodayCell;
     if (!cell) return;
     if (calLiveProgress === null) {
       if (cell.classList.contains('live')) {
@@ -3187,7 +3261,7 @@
     if (!state.clockInDate || !state.clockOutDate) {
       renderFlipTime(elapsedOut, '--:--:--');
       renderFlipTime(totalHoursOut, '--');
-      resultCard.classList.remove('exceeded');
+      resultCard.classList.toggle('exceeded', false);
       return;
     }
 
@@ -3201,7 +3275,7 @@
         setTimeout(() => resultCard.classList.remove('flip-pulse'), 500);
       }
     } else {
-      resultCard.classList.remove('exceeded');
+      resultCard.classList.toggle('exceeded', false);
     }
 
     const e = secondsToHMS(elapsedSec);
@@ -3341,8 +3415,8 @@
 
     if (!state.earlyDepartureDate) {
       renderFlipTime(timeEl, '--:--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
-      timeEl.classList.remove('passed');
-      subEl.textContent = 'Set a planned departure time above';
+      timeEl.classList.toggle('passed', false);
+      setTextIfChanged(subEl, 'Set a planned departure time above');
       return;
     }
 
@@ -3352,13 +3426,13 @@
     if (remainingSec <= 0) {
       const over = secondsToHMS(-remainingSec);
       renderFlipTime(timeEl, '00:00:00', { charClass: 'roll-char', animClass: 'roll-anim' });
-      timeEl.classList.add('passed');
-      subEl.textContent = `Planned departure time reached ${over.str} ago`;
+      timeEl.classList.toggle('passed', true);
+      setTextIfChanged(subEl, `Planned departure time reached ${over.str} ago`);
     } else {
       const r = secondsToHMS(remainingSec);
       renderFlipTime(timeEl, r.str, { charClass: 'roll-char', animClass: 'roll-anim' });
-      timeEl.classList.remove('passed');
-      subEl.textContent = 'until planned departure';
+      timeEl.classList.toggle('passed', false);
+      setTextIfChanged(subEl, 'until planned departure');
     }
   }
 
@@ -3390,7 +3464,7 @@
   loadLogEntriesFromStorage();
   renderLogList();
   calculateLog();
-  updateCalendarViewVisibility();
+  refreshCalendar(true);
 
   calculate();
 
@@ -3427,14 +3501,13 @@
   // shrink-to-fit here is inconsistent across browsers, so this measures
   // the real available space and sets it directly.
   function syncWrapHeight() {
-    const wrap = document.querySelector('.wrap');
+    const wrap = document.querySelector('.wrap:not([hidden])');
     if (window.innerWidth <= 1100) {
-      wrap.style.height = '';
+      document.querySelectorAll('.wrap').forEach(w => { w.style.height = ''; });
       return;
     }
-    const header = document.querySelector('.app-header');
     const bodyPaddingBottom = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
-    const available = window.innerHeight - header.getBoundingClientRect().bottom - bodyPaddingBottom;
+    const available = window.innerHeight - wrap.getBoundingClientRect().top - bodyPaddingBottom;
     wrap.style.height = Math.max(200, available) + 'px';
   }
   // Sticky card titles pile up as a column scrolls (see .card-title in the
@@ -3473,7 +3546,12 @@
     syncWrapHeight();
     syncStackedCards();
   }
-  syncDesktopMeasurements();
+  document.getElementById('tabOverview').addEventListener('click', () => switchView('overview'));
+  document.getElementById('tabLog').addEventListener('click', () => switchView('log'));
+  document.getElementById('logChip').addEventListener('click', () => switchView('log'));
+  let savedView = null;
+  try { savedView = localStorage.getItem('cmoView'); } catch (e) { /* storage unavailable */ }
+  switchView(savedView === 'log' ? 'log' : 'overview', false);
   let resizeQueued = false;
   window.addEventListener('resize', () => {
     if (resizeQueued) return;
