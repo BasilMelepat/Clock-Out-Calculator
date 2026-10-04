@@ -828,45 +828,23 @@
     background: var(--sky-light);
     color: #C0392B;
   }
-  .log-clear-all-btn {
+  .log-clear-month-btn {
     flex: 0 0 auto;
-    min-width: 0;
-    width: auto;
-    padding: 8px 10px;
-    font-size: 11px;
-    text-align: center;
-    white-space: nowrap;
-  }
-  .log-clear-all-btn:hover {
-    background: #FFF0EE;
-    border-color: #C0392B;
-  }
-  .collapse-btn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 16px;
-    font-weight: 800;
-    cursor: pointer;
-    padding: 2px 9px;
-    border-radius: 8px;
-    line-height: 1;
-    transition: background .15s, transform .25s;
-  }
-  .collapse-btn:hover {
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
     background: var(--sky-light);
-    color: var(--deep2);
+    color: var(--muted);
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   }
-  #dailyLogBody {
-    overflow: hidden;
-    transition: max-height 0.3s ease, opacity 0.25s ease, margin 0.3s ease;
-    max-height: 2000px;
-    opacity: 1;
-  }
-  #dailyLogBody.collapsed {
-    max-height: 0;
-    opacity: 0;
-  }
+  .log-clear-month-btn:hover { background: #FFF0EE; border-color: #C0392B; color: #C0392B; }
   .log-io-row {
     display: flex;
     gap: 6px;
@@ -1340,11 +1318,10 @@
   .clock-svg.clock-done .clock-progress { filter: drop-shadow(0 0 3px var(--good)); }
   .clock-status {
     display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px 12px;
+    gap: 8px;
     margin-top: 14px;
   }
   .clock-pill {
@@ -1384,7 +1361,8 @@
   /* ---- Overview / Daily Log views ---- */
   .wrap[hidden] { display: none; }
   .wrap.wrap-overview,
-  .wrap.wrap-log { grid-template-columns: 1fr 1.05fr 1fr; max-width: 1360px; }
+  .wrap.wrap-log,
+  .wrap.wrap-me { grid-template-columns: 1fr 1.05fr 1fr; max-width: 1360px; }
   .view-bar {
     display: flex;
     align-items: center;
@@ -1414,6 +1392,7 @@
   .view-tab:hover { color: var(--deep); }
   .view-tab.active { background: var(--card); color: var(--deep); box-shadow: 0 1px 4px rgba(11, 42, 74, 0.14); }
   .log-chip {
+    align-self: center;
     border: 1px solid var(--good);
     background: #E4F8ED;
     color: var(--good);
@@ -1434,13 +1413,16 @@
   body.dark-mode .log-chip.behind { background: rgba(240, 196, 138, 0.12); border-color: #F0C48A; color: #F5C77E; }
   @media (max-width: 1100px) {
     .wrap.wrap-overview,
-    .wrap.wrap-log { grid-template-columns: 1fr 1fr; max-width: 900px; }
+    .wrap.wrap-log,
+    .wrap.wrap-me { grid-template-columns: 1fr 1fr; max-width: 900px; }
     .wrap.wrap-overview > .col:nth-child(3),
-    .wrap.wrap-log > .col:nth-child(3) { grid-column: 1 / -1; }
+    .wrap.wrap-log > .col:nth-child(3),
+    .wrap.wrap-me > .col:nth-child(3) { grid-column: 1 / -1; }
   }
   @media (max-width: 780px) {
     .wrap.wrap-overview,
-    .wrap.wrap-log { grid-template-columns: 1fr; }
+    .wrap.wrap-log,
+    .wrap.wrap-me { grid-template-columns: 1fr; }
     /* Phones: tabs drop to their own full-width row under the title */
     .app-header { flex-wrap: wrap; row-gap: 10px; }
     .view-bar { order: 3; width: 100%; flex-wrap: nowrap; }
@@ -1448,18 +1430,174 @@
     .view-tab { flex: 1; padding: 9px 6px; white-space: nowrap; }
     .log-chip { flex: none; padding: 6px 10px; }
   }
+  /* ---- My Month (personal tab) ---- */
+  .user-chip {
+    display: inline-block;
+    max-width: 120px;
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-chip[hidden] { display: none; }
+  .user-chip::before { content: '· '; }
+  .me-greeting { font-size: 24px; font-weight: 800; color: var(--deep); line-height: 1.2; }
+  .me-sub { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .me-name-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .me-link-btn, .me-save-btn {
+    border: 1px solid var(--line);
+    background: var(--sky-light);
+    color: var(--deep);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 7px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .me-link-btn:hover, .me-save-btn:hover { background: var(--sky); color: #fff; border-color: var(--sky); }
+  .me-link-btn[hidden], .me-save-btn[hidden], .me-name-input[hidden] { display: none; }
+  .me-name-input {
+    flex: 1 1 140px;
+    min-width: 0;
+    border: 1.5px solid var(--sky);
+    border-radius: 10px;
+    padding: 7px 10px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--deep);
+    background: var(--card);
+    outline: none;
+  }
+  .me-hint { margin: 12px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+  .me-hint[hidden] { display: none; }
+  .me-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .me-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+    background: var(--sky-light);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    min-width: 0;
+  }
+  .me-tile-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .me-tile-value { font-size: 22px; font-weight: 800; color: var(--deep); line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .me-tile-sub { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .me-tile-value.ahead, .me-pm-val.ahead { color: var(--good); }
+  .me-tile-value.behind, .me-pm-val.behind { color: #C4731A; }
+  .me-goal { padding: 14px 16px; background: var(--sky-light); border: 1px solid var(--line); border-radius: 14px; text-align: center; }
+  .me-goal-main { font-size: 28px; font-weight: 800; color: var(--deep); line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .me-goal-main.ahead { color: var(--good); }
+  .me-goal-sub { margin-top: 6px; font-size: 13px; line-height: 1.45; color: var(--muted); }
+  .me-off-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--muted); }
+  .me-wd-row { display: grid; grid-template-columns: 34px 1fr 64px; align-items: center; gap: 10px; margin-bottom: 9px; font-size: 13px; }
+  .me-wd-name { font-weight: 700; color: var(--deep); }
+  .me-wd-track { position: relative; height: 12px; background: var(--sky-light); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .me-wd-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--good); }
+  .me-wd-fill.short { background: #E9A44D; }
+  .me-wd-mark { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--deep); opacity: 0.45; }
+  .me-wd-val { text-align: right; font-weight: 700; color: var(--deep); font-variant-numeric: tabular-nums; }
+  .me-wd-val.none { color: var(--muted); font-weight: 600; }
+  .me-insight { margin-top: 6px; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+  .me-insight:empty { display: none; }
+  .me-pm-row { display: grid; grid-template-columns: 78px 1fr 74px; align-items: center; gap: 10px; margin-bottom: 11px; }
+  .me-pm-label { font-size: 13px; font-weight: 700; color: var(--deep); line-height: 1.2; }
+  .me-pm-label small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); }
+  .me-pm-bar { display: grid; grid-template-columns: 1fr 1fr; height: 14px; background: var(--sky-light); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .me-pm-neg, .me-pm-pos { position: relative; }
+  .me-pm-neg i, .me-pm-pos i { position: absolute; top: 0; bottom: 0; }
+  .me-pm-neg i { right: 0; background: #E9A44D; border-radius: 999px 0 0 999px; }
+  .me-pm-pos i { left: 0; background: var(--good); border-radius: 0 999px 999px 0; }
+  .me-pm-pos { border-left: 1px solid var(--line); }
+  .me-pm-val { text-align: right; font-size: 13px; font-weight: 800; color: var(--deep); font-variant-numeric: tabular-nums; }
+  body.dark-mode .me-tile-value.behind, body.dark-mode .me-pm-val.behind { color: #F5C77E; }
+  @media (max-width: 780px) {
+    .view-tab { padding: 9px 4px; font-size: 12.5px; }
+    .me-greeting { font-size: 21px; }
+  }
+  /* ---- My Month: month picker + holidays ---- */
+  .me-month-picker { margin-top: 14px; }
+  .me-month-picker[hidden], .me-month-menu[hidden], .me-month-badge[hidden] { display: none; }
+  .me-month-btn {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 10px 14px; border: 1.5px solid var(--line); border-radius: 12px;
+    background: var(--sky-light); color: var(--deep);
+    font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; text-align: left;
+  }
+  .me-month-btn:hover, .me-month-btn[aria-expanded="true"] { border-color: var(--sky); }
+  .me-month-btn-main { flex: 1; min-width: 0; }
+  .me-chev { transition: transform 0.2s ease; color: var(--muted); }
+  .me-month-btn[aria-expanded="true"] .me-chev { transform: rotate(180deg); }
+  .me-month-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--sky); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.03em;
+  }
+  .me-month-menu {
+    margin-top: 8px; max-height: 232px; overflow-y: auto;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 4px;
+  }
+  .me-month-opt {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 9px 10px; border: none; border-left: 3px solid transparent; border-radius: 8px;
+    background: transparent; color: var(--deep); font: inherit; font-size: 13.5px; font-weight: 600;
+    text-align: left; cursor: pointer;
+  }
+  .me-month-opt:hover { background: var(--sky-light); }
+  .me-month-opt-label { flex: 1; min-width: 0; }
+  .me-month-opt-meta { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .me-month-opt.current { background: var(--sky-light); border-left-color: var(--sky); font-weight: 800; }
+  .me-month-opt.selected .me-month-opt-label { color: var(--sky); }
+  .me-month-check { width: 14px; text-align: center; color: var(--sky); font-weight: 800; }
+  .me-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .me-pills:empty { display: none; }
+  .me-pill {
+    padding: 4px 11px; border-radius: 999px; background: var(--sky-light); border: 1px solid var(--line);
+    font-size: 12px; font-weight: 700; color: var(--deep); font-variant-numeric: tabular-nums;
+  }
+  /* Two columns by default; the third (Past Months) column only exists once earlier months have logs */
+  #mePastCol[hidden] { display: none; }
+  .wrap.wrap-me.me-two-col { grid-template-columns: 1fr 1fr; max-width: 1000px; }
+  @media (max-width: 780px) { .wrap.wrap-me.me-two-col { grid-template-columns: 1fr; } }
+  .me-pm-row.sel .me-pm-label { color: var(--sky); }
+  .holiday-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; min-height: 34px; }
+  .holiday-empty { font-size: 13px; color: var(--muted); padding: 6px 0; }
+  .holiday-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 6px 6px 12px;
+    border-radius: 999px; background: var(--sky-light); border: 1px solid var(--line);
+    font-size: 13px; font-weight: 700; color: var(--deep);
+  }
+  .holiday-chip button {
+    border: none; background: transparent; color: var(--muted); font-size: 15px; line-height: 1;
+    width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+  }
+  .holiday-chip button:hover { background: #F8D7D7; color: #B3261E; }
+  .holiday-add-row { display: flex; gap: 8px; align-items: center; }
+  .holiday-add-row input {
+    flex: 1; min-width: 0; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px;
+    background: var(--card); color: var(--deep); font: inherit; font-size: 14px; outline: none;
+  }
+  .holiday-add-row input:focus { border-color: var(--sky); }
+  .holiday-actions { display: flex; gap: 10px; align-items: stretch; margin-top: 14px; }
+  .holiday-actions .log-io-btn { flex: 0 0 auto; padding: 0 14px; }
+  .holiday-actions .modal-import-btn { flex: 1; margin-top: 0; }
 </style>
 </head>
 <body>
 <header class="app-header">
-  <span class="app-header-title">⏰ Clock me Out<span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.200</span></span>
+  <span class="app-header-title">⏰ Clock me Out<span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.210</span><span class="user-chip" id="userChip" hidden></span></span>
   <div class="view-bar" id="viewBar" data-view="overview">
     <div class="view-tabs" role="tablist" aria-label="Views">
       <button class="view-tab active" id="tabOverview" type="button" role="tab" aria-selected="true">📊 Overview</button>
       <button class="view-tab" id="tabLog" type="button" role="tab" aria-selected="false">📅 Daily Log</button>
+    <button class="view-tab" id="tabMe" type="button" role="tab" aria-selected="false">👤 My Month</button>
     </div>
-    <button class="log-chip" id="logChip" type="button" hidden title="Open Daily Log"></button>
-  </div>
+    </div>
   <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
 </header>
 <script>
@@ -1497,6 +1635,7 @@
         </div>
       </div>
     </div>
+    <button class="log-chip" id="logChip" type="button" hidden title="Open Daily Log"></button>
   </div>
 
   <div class="col">
@@ -1625,10 +1764,8 @@
     <div class="card">
       <div class="card-title">
         <span>📅 Daily Work Log</span>
-        <button class="collapse-btn" id="toggleDailyLogBtn" type="button" aria-label="Minimize Daily Work Log">⬆️</button>
       </div>
 
-      <div id="dailyLogBody">
       <div class="log-input-card">
         <div class="log-input-box">
           <label for="logDuration">Hours Clocked</label>
@@ -1640,7 +1777,7 @@
           <span class="input-suffix">hrs</span>
         </div>
         <div class="log-input-box log-date-box">
-          <label for="logDateInput">Date (optional)</label>
+          <label for="logDateInput">Date</label>
           <input type="date" id="logDateInput" class="log-duration-input">
         </div>
         <div class="log-add-row">
@@ -1652,13 +1789,11 @@
       <div class="log-io-row">
         <button class="log-io-btn" id="logCopyBtn" type="button">📄 Copy Log</button>
         <button class="log-io-btn" id="logBulkBtn" type="button">🗃️ Bulk Import</button>
-        <button class="log-io-btn log-clear-all-btn" id="clearLogBtn" type="button" style="display:none;" aria-label="Clear all logged days">🗑️ Clear All</button>
       </div>
 
       <div class="log-summary clear" id="logSummary">Log your daily hours to track your running-late balance automatically.</div>
       <button class="sync-btn" id="syncLogBtn" type="button" style="display:none;">🔄️ Sync to Running Late Balance</button>
       <button class="sync-btn early-sync-btn" id="syncEarlyLogBtn" type="button" style="display:none;">🌇 Plan an early Departure</button>
-      </div>
     </div>
   </div>
   <div class="col">
@@ -1683,13 +1818,16 @@
         </div>
       </div>
     </div>
+
+    <div class="app-footer footer-desktop">© 2026 Basil Melepat · Designed for You</div>
   </div>
   <div class="col">
     <div class="card">
       <div class="card-title">
-        <span>📋 Table View</span>
+        <span id="logTableTitle">📋 Table View</span>
+        <button class="log-clear-month-btn" id="clearMonthBtn" type="button" style="display:none;">🗑️ Clear month</button>
       </div>
-      <div class="log-empty" id="logTableEmpty">No days logged yet. Add one on the left.</div>
+      <div class="log-empty" id="logTableEmpty">No days logged yet.</div>
       <div id="logListWrap" style="display:none;">
         <div class="log-list-header">
           <span>Day</span>
@@ -1700,6 +1838,72 @@
         </div>
         <div id="logEntriesContainer" class="log-entries-scroll"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap wrap-me" id="viewMe" hidden>
+  <div class="col">
+    <div class="card me-hello">
+      <div class="me-greeting" id="meGreeting">Hello</div>
+      <div class="me-sub" id="meSub"></div>
+      <div class="me-month-picker" id="meMonthPicker" hidden>
+        <button type="button" class="me-month-btn" id="meMonthBtn" aria-haspopup="listbox" aria-expanded="false">
+          <span class="me-month-btn-main">📅 <span id="meMonthBtnLabel">Month</span></span>
+          <span class="me-month-badge" id="meMonthBadge" hidden>Current</span>
+          <span class="me-chev" aria-hidden="true">▾</span>
+        </button>
+        <div class="me-month-menu" id="meMonthMenu" role="listbox" hidden></div>
+      </div>
+      <div class="me-name-row">
+        <button class="me-link-btn" id="meNameEdit" type="button">✏️ Set your name</button>
+        <input type="text" id="meNameInput" class="me-name-input" maxlength="40" placeholder="Your name" hidden>
+        <button class="me-save-btn" id="meNameSave" type="button" hidden>Save</button>
+      </div>
+      <p class="me-hint" id="meNameHint">Tip: upload your attendance sheet in Bulk Import and your name is picked up automatically.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span id="meMonthTitle">📈 This Month</span></div>
+      <div class="me-tiles">
+        <div class="me-tile"><span class="me-tile-label">Days logged</span><b class="me-tile-value" id="meDays">—</b><span class="me-tile-sub" id="meDaysSub">&nbsp;</span></div>
+        <div class="me-tile"><span class="me-tile-label">Average / day</span><b class="me-tile-value" id="meAvg">—</b><span class="me-tile-sub" id="meAvgSub">&nbsp;</span></div>
+        <div class="me-tile"><span class="me-tile-label">Balance</span><b class="me-tile-value" id="meBalance">—</b><span class="me-tile-sub" id="meBalanceSub">&nbsp;</span></div>
+        <div class="me-tile"><span class="me-tile-label">Best day</span><b class="me-tile-value" id="meBest">—</b><span class="me-tile-sub" id="meBestSub">&nbsp;</span></div>
+        <div class="me-tile"><span class="me-tile-label">Met target</span><b class="me-tile-value" id="meMet">—</b><span class="me-tile-sub" id="meMetSub">&nbsp;</span></div>
+        <div class="me-tile"><span class="me-tile-label">Target streak</span><b class="me-tile-value" id="meStreak">—</b><span class="me-tile-sub" id="meStreakSub">&nbsp;</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <div class="card-title"><span>🎯 Month Goal</span></div>
+      <div class="me-goal">
+        <div class="me-goal-main" id="meGoalMain">—</div>
+        <div class="me-goal-sub" id="meGoalSub"></div>
+      </div>
+      <div class="me-off-row me-holiday-row">
+        <span id="meHolidayLine">Holidays: None</span>
+        <button type="button" class="me-link-btn" id="meHolidayEdit">✏️ Edit</button>
+      </div>
+      <div class="me-pills" id="meHolidayPills"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>🗓️ Weekday Pattern</span></div>
+      <div id="meWeekdays"></div>
+      <div class="me-insight" id="meWeekdayInsight"></div>
+    </div>
+
+    <div class="app-footer footer-desktop">© 2026 Basil Melepat · Designed for You</div>
+  </div>
+
+  <div class="col" id="mePastCol" hidden>
+    <div class="card">
+      <div class="card-title"><span>🕰️ Past Months</span></div>
+      <div id="mePastMonths"></div>
+      <div class="me-insight" id="mePastInsight"></div>
     </div>
   </div>
 </div>
@@ -1716,9 +1920,29 @@
     <input type="file" id="logBulkFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
     <select id="logBulkEmployeeSelect" class="modal-employee-select" style="display:none;"></select>
     <textarea id="logBulkArea" class="modal-textarea" placeholder="0h 0m 0s, 8, dd-mm-yyyy&#10;0h 0m 0s, 8, dd-mm-yyyy&#10;0h 0m 0s, 8, dd-mm-yyyy"></textarea>
-    <div class="modal-hint">One entry per line: <b>Xh Ym Zs, Target, dd-mm-yyyy</b> (comma or tab separated). Target and date are optional; any part (h/m/s) can be omitted.</div>
+    <div class="modal-hint">One entry per line: <b>Xh Ym Zs, Target, dd-mm-yyyy</b> (comma or tab separated). The date is required (lines without one are skipped); the target is optional and any part (h/m/s) can be omitted.</div>
     <div class="log-paste-feedback" id="logBulkFeedback"></div>
     <button id="logBulkImportBtn" class="modal-import-btn" type="button">Import</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="holidayOverlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span id="holidayModalTitle">🎉 Holidays</span>
+      <button class="modal-close" id="holidayCloseBtn" type="button" aria-label="Close">❌</button>
+    </div>
+    <div class="holiday-list" id="holidayList"></div>
+    <div class="holiday-add-row">
+      <input type="date" id="holidayDateInput" aria-label="Holiday date">
+      <button class="me-save-btn" id="holidayAddBtn" type="button">Add holiday</button>
+    </div>
+    <div class="log-paste-feedback" id="holidayFeedback"></div>
+    <div class="modal-hint">Holidays aren't counted as working days when the Month Goal works out what's left. They're also picked up from your attendance sheet when you import it.</div>
+    <div class="holiday-actions">
+      <button class="log-io-btn" id="holidayClearBtn" type="button">🗑️ Clear month</button>
+      <button class="modal-import-btn" id="holidayDoneBtn" type="button">Done</button>
+    </div>
   </div>
 </div>
 
@@ -2373,18 +2597,9 @@
   }
 
   // ---- Daily Work Log ----
-  const dailyLogBody = document.getElementById('dailyLogBody');
-  const toggleDailyLogBtn = document.getElementById('toggleDailyLogBtn');
-
-  toggleDailyLogBtn.addEventListener('click', () => {
-    const collapsed = dailyLogBody.classList.toggle('collapsed');
-    toggleDailyLogBtn.textContent = collapsed ? '⬇️' : '⬆️';
-    toggleDailyLogBtn.setAttribute('aria-label', collapsed ? 'Expand Daily Work Log' : 'Minimize Daily Work Log');
-  });
-
   const logEntriesContainer = document.getElementById('logEntriesContainer');
   const logListWrap = document.getElementById('logListWrap');
-  const clearLogBtn = document.getElementById('clearLogBtn');
+  const clearMonthBtn = document.getElementById('clearMonthBtn');
   const addLogEntryBtn = document.getElementById('addLogEntryBtn');
   const syncLogBtn = document.getElementById('syncLogBtn');
   const syncEarlyLogBtn = document.getElementById('syncEarlyLogBtn');
@@ -2558,13 +2773,32 @@
     return `${sign}${totalMinutes}:${pad(secs)}`;
   }
 
+  // The table shows the month the calendar is on (the current month by default).
+  function tableMonth() {
+    const now = new Date();
+    const y = calendarYear !== null ? calendarYear : now.getFullYear();
+    const m = calendarYear !== null ? calendarMonth : now.getMonth();
+    return { y, m, isCurrent: y === now.getFullYear() && m === now.getMonth() };
+  }
+  // Undated legacy entries belong to the current month only.
+  function entriesInTableMonth() {
+    const { y, m, isCurrent } = tableMonth();
+    return logEntries.filter(e => (e.date ? e.date.startsWith(monthPrefix(y, m)) : isCurrent));
+  }
+
   function renderLogList() {
     logEntriesContainer.innerHTML = '';
-    logListWrap.style.display = logEntries.length ? 'block' : 'none';
-    document.getElementById('logTableEmpty').style.display = logEntries.length ? 'none' : 'block';
-    clearLogBtn.style.display = logEntries.length ? 'block' : 'none';
+    const { y: viewYear, m: viewMonth } = tableMonth();
+    const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    const shown = entriesInTableMonth();
 
-    const sortedEntries = logEntries.slice().sort((a, b) => {
+    document.getElementById('logTableTitle').textContent = `📋 Table View · ${monthLabel}`;
+    document.getElementById('logTableEmpty').textContent = `No days logged in ${monthLabel} yet.`;
+    logListWrap.style.display = shown.length ? 'block' : 'none';
+    document.getElementById('logTableEmpty').style.display = shown.length ? 'none' : 'block';
+    clearMonthBtn.style.display = shown.length ? '' : 'none';
+
+    const sortedEntries = shown.slice().sort((a, b) => {
       if (a.date && b.date) return a.date.localeCompare(b.date);
       if (a.date && !b.date) return -1;
       if (!a.date && b.date) return 1;
@@ -2656,6 +2890,11 @@
       flashInvalid(logDuration);
       return;
     }
+    if (!date) {
+      flashInvalid(logDateInput);
+      logDateInput.focus();
+      return;
+    }
 
     if (logEditingId !== null) {
       const entry = logEntries.find(e => e.id === logEditingId);
@@ -2664,7 +2903,7 @@
       }
       cancelEditLogEntry();
     } else {
-      const existing = date ? logEntries.find(e => e.date === date) : null;
+      const existing = logEntries.find(e => e.date === date);
 
       if (existing) {
         const totalSeconds = (existing.hh * 3600 + existing.mm * 60 + existing.ss) + (parsed.hh * 3600 + parsed.mm * 60 + parsed.ss);
@@ -2684,48 +2923,61 @@
       syncRefreshBtn();
     }
 
+    const [dy, dm] = date.split('-').map(Number);
+    calendarYear = dy;
+    calendarMonth = dm - 1;
     renderLogList();
     calculateLog();
     saveLogEntries();
   });
 
-  clearLogBtn.addEventListener('click', () => {
-    if (logEntries.length > 1 && !confirm(`Remove all ${logEntries.length} logged days? This can't be undone.`)) {
+  // Clears only the month the table is showing; other months are left alone.
+  clearMonthBtn.addEventListener('click', () => {
+    const toRemove = entriesInTableMonth();
+    if (!toRemove.length) return;
+    const { y, m } = tableMonth();
+    const label = new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    if (toRemove.length > 1 && !confirm(`Remove all ${toRemove.length} logged days of ${label}? This can't be undone.`)) {
       return;
     }
-    logEntries = [];
-    logEntryCount = 0;
-    if (logEditingId !== null) cancelEditLogEntry();
+    const gone = new Set(toRemove.map(e => e.id));
+    logEntries = logEntries.filter(e => !gone.has(e.id));
+    if (logEditingId !== null && gone.has(logEditingId)) cancelEditLogEntry();
     saveLogEntries();
     renderLogList();
     calculateLog();
-    refreshCalendar(true);
   });
 
-  // Single pass over logEntries producing the total clocked-vs-target diff in
-  // seconds. getDailyLogBacklogMin/getDailyLogAheadMin/calculateLog/the sync
-  // handlers all previously ran their own identical forEach over the same
-  // array; they now share this one computation.
+  // One shared computation of the total clocked-vs-target diff (in seconds)
+  // for calculateLog, the balance chip, the sync handlers and the early plan.
+  // Backlog / early-departure maths only looks at the ongoing calendar month:
+  // earlier months are ignored. (Days saved before the date became mandatory
+  // have no date, so they are counted as part of the current month.)
+  function monthPrefix(year, monthIndex) { return `${year}-${pad(monthIndex + 1)}-`; }
+  function isInMonth(entry, year, monthIndex) {
+    return !entry.date || entry.date.startsWith(monthPrefix(year, monthIndex));
+  }
+  function currentMonthEntries() {
+    const now = new Date();
+    return logEntries.filter(e => isInMonth(e, now.getFullYear(), now.getMonth()));
+  }
   function getLogDiffSeconds() {
     let totalDiffSeconds = 0;
-    for (const entry of logEntries) {
+    for (const entry of currentMonthEntries()) {
       totalDiffSeconds += (entry.hh * 3600 + entry.mm * 60 + entry.ss) - (entry.target * 3600);
     }
     return totalDiffSeconds;
   }
 
-  function getDailyLogBacklogMin() {
-    if (logEntries.length === 0) return 0;
-    return Math.max(0, -getLogDiffSeconds() / 60);
-  }
-
-  function getDailyLogAheadMin() {
-    if (logEntries.length === 0) return 0;
-    return Math.max(0, getLogDiffSeconds() / 60);
-  }
-
   let logSyncMode = null;
   let currentView = 'overview';
+  let userName = '';
+  let meMonthKey = null; // null = the current month, otherwise 'YYYY-MM' of an earlier month
+  let holidays = new Set(); // 'YYYY-MM-DD' dates that aren't working days
+  try {
+    userName = localStorage.getItem('cmoUserName') || '';
+    holidays = new Set(JSON.parse(localStorage.getItem('cmoHolidays') || '[]').filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)));
+  } catch (e) { /* storage unavailable or corrupt: start with no holidays */ }
 
   // Compact duration for the chip: "2h 5m" from an hour up, "10m 50s" below it.
   function formatChipDuration(totalMinutes) {
@@ -2740,25 +2992,328 @@
   function updateLogChip() {
     const chip = document.getElementById('logChip');
     if (!chip) return;
-    if (logEntries.length === 0 || currentView === 'log') { chip.hidden = true; return; }
+    if (currentMonthEntries().length === 0 || currentView === 'log') { chip.hidden = true; return; }
     const diffMin = getLogDiffSeconds() / 60;
     chip.classList.toggle('behind', diffMin < -0.5);
+    chip.title = diffMin < -0.5 ? 'Add this backlog to Running Late Balance' : diffMin > 0.5 ? 'Plan an early departure' : 'Open Daily Log';
     if (diffMin > 0.5) chip.textContent = `Log: +${formatChipDuration(diffMin)} ahead`;
     else if (diffMin < -0.5) chip.textContent = `Log: −${formatChipDuration(-diffMin)} behind`;
     else chip.textContent = 'Log: on target';
     chip.hidden = false;
   }
 
+  // ---- My Month (personal tab) ----
+  const entrySeconds = e => e.hh * 3600 + e.mm * 60 + e.ss;
+  function fmtHM(sec) {
+    const t = Math.round(Math.abs(sec) / 60);
+    const h = Math.floor(t / 60), m = t % 60;
+    return h ? `${h}h ${m}m` : `${m}m`;
+  }
+  function dateParts(dateStr) { const [y, m, d] = dateStr.split('-').map(Number); return { y, m, d }; }
+  function entryWeekday(e) { const { y, m, d } = dateParts(e.date); return new Date(y, m - 1, d).getDay(); }
+  // Consecutive logged days that met their target, counting back from the end
+  // of the given month (or from the latest entry when no month is given).
+  function targetStreak(uptoDate) {
+    const dated = logEntries.filter(e => e.date && (!uptoDate || e.date <= uptoDate))
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    let n = 0;
+    for (let i = dated.length - 1; i >= 0; i--) {
+      if (entrySeconds(dated[i]) >= dated[i].target * 3600) n++; else break;
+    }
+    return n;
+  }
+
+  // ---- holidays ----
+  function saveHolidays() {
+    try { localStorage.setItem('cmoHolidays', JSON.stringify([...holidays].sort())); } catch (e) { /* storage unavailable */ }
+  }
+  function addHolidays(list) { list.forEach(d => holidays.add(d)); saveHolidays(); }
+  function holidaysInMonth(y, m) {
+    const prefix = monthPrefix(y, m);
+    return [...holidays].filter(d => d.startsWith(prefix)).sort();
+  }
+  function isWeeklyOffDay(wd) { return wd === 0; } // Sundays are the day off; mark any other off days as holidays
+  function workingDaysInMonth(y, m) {
+    const last = new Date(y, m + 1, 0).getDate();
+    let n = 0;
+    for (let d = 1; d <= last; d++) {
+      if (isWeeklyOffDay(new Date(y, m, d).getDay())) continue;
+      if (holidays.has(`${y}-${pad(m + 1)}-${pad(d)}`)) continue;
+      n++;
+    }
+    return n;
+  }
+  function fmtDay(dateStr, withWeekday) {
+    const { y, m, d } = dateParts(dateStr);
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, withWeekday ? { weekday: 'short', day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short' });
+  }
+
+  // Spots holidays in an uploaded attendance sheet: a "holiday" marker in your own
+  // row, or a day of a normally-worked weekday (before the sheet's last filled-in
+  // day) on which nobody among 3+ people has hours. Weekdays nobody ever works in
+  // the sheet (e.g. Sundays) are weekly offs, not holidays.
+  function detectSheetHolidays(header, rows, ownRow) {
+    const hasTime = c => /^\d{1,2}:\d{2}/.test(String(c === undefined || c === null ? '' : c).trim());
+    const columns = [];
+    for (let col = 1; col < header.length; col++) {
+      const date = parseDateSegment(String(header[col] || '').trim());
+      if (!date) continue;
+      const { y, m, d } = dateParts(date);
+      columns.push({ col, date, wd: new Date(y, m - 1, d).getDay(), worked: rows.some(r => hasTime(r[col])) });
+    }
+    let lastData = '';
+    const weekdayWorked = [false, false, false, false, false, false, false];
+    columns.forEach(c => { if (c.worked) { weekdayWorked[c.wd] = true; if (c.date > lastData) lastData = c.date; } });
+    const found = [];
+    columns.forEach(({ col, date, wd, worked }) => {
+      const ownCell = String(ownRow[col] === undefined || ownRow[col] === null ? '' : ownRow[col]).trim();
+      const marked = !hasTime(ownCell) && /^(h|hol|ph|fh|nh|gh)$|holiday|festival/i.test(ownCell);
+      const everyoneOff = rows.length >= 3 && !worked && date <= lastData && weekdayWorked[wd] && !isWeeklyOffDay(wd);
+      if (marked || everyoneOff) found.push(date);
+    });
+    return found;
+  }
+
+  // ---- which month My Month is showing ----
+  function previousMonthKeys() {
+    const now = new Date();
+    const curKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+    const keys = new Set();
+    logEntries.forEach(e => { if (e.date && e.date.slice(0, 7) < curKey) keys.add(e.date.slice(0, 7)); });
+    return [...keys].sort().reverse();
+  }
+  function selectedMonth() {
+    const now = new Date();
+    if (meMonthKey && previousMonthKeys().includes(meMonthKey)) {
+      const [y, mo] = meMonthKey.split('-').map(Number);
+      return { y, m: mo - 1, isCurrent: false };
+    }
+    meMonthKey = null;
+    return { y: now.getFullYear(), m: now.getMonth(), isCurrent: true };
+  }
+  function entriesForMonth(y, m, isCurrent) {
+    return logEntries.filter(e => (e.date ? e.date.startsWith(monthPrefix(y, m)) : isCurrent));
+  }
+
+  function setUserName(name) {
+    userName = String(name || '').trim().slice(0, 40);
+    try { localStorage.setItem('cmoUserName', userName); } catch (e) { /* storage unavailable */ }
+    const chip = document.getElementById('userChip');
+    chip.textContent = userName;
+    chip.hidden = !userName;
+    renderMyMonth();
+  }
+
+  function renderMyMonth() {
+    const $ = id => document.getElementById(id);
+    const now = new Date();
+    const { y, m, isCurrent } = selectedMonth();
+    const monthDate = new Date(y, m, 1);
+    const monthTitle = monthDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    const monthName = monthDate.toLocaleDateString(undefined, { month: 'long' });
+    const cur = entriesForMonth(y, m, isCurrent);
+    const targetSec = (parseFloat($('targetHours').value) || 8) * 3600;
+    const selKey = `${y}-${pad(m + 1)}`;
+    const curKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+
+    // Greeting
+    const hr = now.getHours();
+    const hello = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+    $('meGreeting').textContent = userName ? `${hello}, ${userName} 👋` : `${hello} 👋`;
+    $('meSub').textContent = `${monthTitle} · ${cur.length} day${cur.length === 1 ? '' : 's'} logged`;
+    $('meNameEdit').textContent = userName ? '✏️ Edit name' : '✏️ Set your name';
+    $('meNameHint').hidden = !!userName;
+    $('meMonthTitle').textContent = `📈 ${monthTitle}`;
+
+    // Month picker: only when earlier months have logs; the current month is highlighted
+    const prevKeys = previousMonthKeys();
+    $('meMonthPicker').hidden = prevKeys.length === 0;
+    if (!prevKeys.length) setMonthMenuOpen(false);
+    $('meMonthBtnLabel').textContent = monthTitle;
+    $('meMonthBadge').hidden = !isCurrent;
+    $('meMonthMenu').innerHTML = [curKey, ...prevKeys].map(k => {
+      const [ky, km] = k.split('-').map(Number);
+      const label = new Date(ky, km - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      const n = k === curKey ? currentMonthEntries().length : logEntries.filter(e => e.date && e.date.startsWith(k + '-')).length;
+      return `<button type="button" role="option" class="me-month-opt${k === curKey ? ' current' : ''}${k === selKey ? ' selected' : ''}" data-key="${k}" aria-selected="${k === selKey}">` +
+        `<span class="me-month-opt-label">${label}</span>` +
+        (k === curKey ? '<span class="me-month-badge">Current</span>' : `<span class="me-month-opt-meta">${n} day${n === 1 ? '' : 's'}</span>`) +
+        `<span class="me-month-check">${k === selKey ? '✓' : ''}</span></button>`;
+    }).join('');
+
+    // Tiles for the selected month
+    const diff = cur.reduce((a, e) => a + entrySeconds(e) - e.target * 3600, 0);
+    const total = cur.reduce((a, e) => a + entrySeconds(e), 0);
+    const setTile = (id, value, sub, cls) => {
+      const v = $(id); v.textContent = value; v.className = 'me-tile-value' + (cls ? ' ' + cls : '');
+      $(id + 'Sub').textContent = sub || '\u00A0';
+    };
+    setTile('meDays', String(cur.length), cur.length ? `of ${workingDaysInMonth(y, m)} working days` : 'nothing logged yet');
+    if (cur.length) {
+      const best = cur.reduce((a, e) => (entrySeconds(e) > entrySeconds(a) ? e : a));
+      const met = cur.filter(e => entrySeconds(e) >= e.target * 3600).length;
+      const bestLabel = best.date ? fmtDay(best.date) : 'undated';
+      setTile('meAvg', fmtHM(total / cur.length), `target ${fmtHM(targetSec)}`);
+      const bal = Math.abs(diff) < 30 ? 'On target' : `${diff > 0 ? '+' : '−'}${fmtHM(diff)}`;
+      const when = isCurrent ? 'this month' : `in ${monthName}`;
+      setTile('meBalance', bal, diff > 30 ? `ahead ${when}` : diff < -30 ? `behind ${when}` : 'right on track', diff > 30 ? 'ahead' : diff < -30 ? 'behind' : '');
+      setTile('meBest', fmtHM(entrySeconds(best)), bestLabel);
+      setTile('meMet', `${met} of ${cur.length}`, `${Math.round(met / cur.length * 100)}% of days`);
+    } else {
+      setTile('meAvg', '—', ''); setTile('meBalance', '—', ''); setTile('meBest', '—', ''); setTile('meMet', '—', '');
+    }
+    const streak = targetStreak(`${y}-${pad(m + 1)}-31`);
+    setTile('meStreak', String(streak), streak === 1 ? 'day in a row' : 'days in a row', streak >= 3 ? 'ahead' : '');
+
+    // Month goal: what each remaining working day needs to average
+    const todayKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const loggedToday = logEntries.some(e => e.date === todayKey);
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    let remaining = 0;
+    if (isCurrent) {
+      for (let d = now.getDate(); d <= lastDay; d++) {
+        if (d === now.getDate() && loggedToday) continue;
+        if (isWeeklyOffDay(new Date(y, m, d).getDay())) continue;
+        if (holidays.has(`${y}-${pad(m + 1)}-${pad(d)}`)) continue;
+        remaining++;
+      }
+    }
+    const goalMain = $('meGoalMain'), goalSub = $('meGoalSub');
+    goalMain.classList.remove('ahead');
+    const standing = diff > 30 ? `You're ${fmtHM(diff)} ahead` : diff < -30 ? `You're ${fmtHM(diff)} behind` : `You're on target`;
+    if (remaining === 0) {
+      goalMain.textContent = cur.length ? (diff >= 0 ? `+${fmtHM(diff)}` : `−${fmtHM(diff)}`) : '—';
+      goalSub.textContent = cur.length
+        ? `${monthName}'s working days are done. That's where you finished.`
+        : `No working days left in ${monthName}.`;
+    } else {
+      const need = targetSec - diff / remaining;
+      if (need <= 0) {
+        goalMain.textContent = 'All covered 🎉';
+        goalMain.classList.add('ahead');
+        goalSub.textContent = `${standing}, which already covers the rest of ${monthName}.`;
+      } else {
+        goalMain.textContent = `${fmtHM(need)} / day`;
+        goalSub.textContent = `Average this over the ${remaining} remaining working day${remaining === 1 ? '' : 's'} to finish ${monthName} even. ${standing}.`;
+      }
+    }
+    const monthHolidays = holidaysInMonth(y, m);
+    $('meHolidayLine').textContent = `Holidays: ${monthHolidays.length ? monthHolidays.length : 'None'} in ${monthName}`;
+    $('meHolidayPills').innerHTML = monthHolidays.map(d => `<span class="me-pill">${fmtDay(d)}</span>`).join('');
+
+    // Weekday pattern (all dated history)
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const agg = dayNames.map(() => ({ sum: 0, n: 0 }));
+    logEntries.filter(e => e.date).forEach(e => { const a = agg[entryWeekday(e)]; a.sum += entrySeconds(e); a.n++; });
+    const avgs = agg.map(a => (a.n ? a.sum / a.n : null));
+    const maxAvg = Math.max(targetSec, ...avgs.filter(v => v !== null));
+    const scale = maxAvg * 1.08;
+    $('meWeekdays').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(wd => {
+      const v = avgs[wd];
+      if (v === null) return `<div class="me-wd-row"><span class="me-wd-name">${dayNames[wd]}</span><div class="me-wd-track"><i class="me-wd-mark" style="left:${(targetSec / scale * 100).toFixed(1)}%"></i></div><span class="me-wd-val none">—</span></div>`;
+      const cls = v >= targetSec - 30 ? '' : ' short';
+      return `<div class="me-wd-row"><span class="me-wd-name">${dayNames[wd]}</span><div class="me-wd-track"><i class="me-wd-fill${cls}" style="width:${(v / scale * 100).toFixed(1)}%"></i><i class="me-wd-mark" style="left:${(targetSec / scale * 100).toFixed(1)}%"></i></div><span class="me-wd-val">${fmtHM(v)}</span></div>`;
+    }).join('');
+    const withData = [1, 2, 3, 4, 5, 6, 0].filter(wd => avgs[wd] !== null);
+    if (withData.length >= 2) {
+      const hi = withData.reduce((a, b) => (avgs[b] > avgs[a] ? b : a));
+      const lo = withData.reduce((a, b) => (avgs[b] < avgs[a] ? b : a));
+      $('meWeekdayInsight').textContent = hi === lo ? '' : `Strongest: ${dayNames[hi]} (${fmtHM(avgs[hi])}) · Lightest: ${dayNames[lo]} (${fmtHM(avgs[lo])}). The line marks your target.`;
+    } else {
+      $('meWeekdayInsight').textContent = 'Log a few more days to see your weekly pattern.';
+    }
+
+    // Past months (read-only history, newest first)
+    const months = {};
+    logEntries.filter(e => e.date).forEach(e => {
+      const key = e.date.slice(0, 7);
+      const mo = months[key] || (months[key] = { diff: 0, n: 0 });
+      mo.diff += entrySeconds(e) - e.target * 3600; mo.n++;
+    });
+    const keys = Object.keys(months).filter(k => k < curKey).sort().reverse().slice(0, 6);
+    // Past Months only exists (and the page only goes to 3 columns) once earlier months have logs
+    const hasPast = keys.length > 0;
+    $('mePastCol').hidden = !hasPast;
+    const viewMe = $('viewMe');
+    if (viewMe.classList.contains('me-two-col') === hasPast) {
+      viewMe.classList.toggle('me-two-col', !hasPast);
+      syncDesktopMeasurements();
+    }
+    if (!hasPast) {
+      $('mePastMonths').innerHTML = '';
+      $('mePastInsight').textContent = '';
+    } else {
+      const maxAbs = Math.max(60, ...keys.map(k => Math.abs(months[k].diff)));
+      $('mePastMonths').innerHTML = keys.map(k => {
+        const mo = months[k];
+        const [ky, km] = k.split('-').map(Number);
+        const label = new Date(ky, km - 1, 1).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+        const w = (Math.abs(mo.diff) / maxAbs * 100).toFixed(1);
+        const neg = mo.diff < -30, pos = mo.diff > 30;
+        const val = neg || pos ? `${pos ? '+' : '−'}${fmtHM(mo.diff)}` : 'Even';
+        return `<div class="me-pm-row${k === selKey ? ' sel' : ''}"><span class="me-pm-label">${label}<small>${mo.n} day${mo.n === 1 ? '' : 's'}</small></span>` +
+          `<div class="me-pm-bar"><div class="me-pm-neg">${neg ? `<i style="width:${w}%"></i>` : ''}</div><div class="me-pm-pos">${pos ? `<i style="width:${w}%"></i>` : ''}</div></div>` +
+          `<span class="me-pm-val ${pos ? 'ahead' : neg ? 'behind' : ''}">${val}</span></div>`;
+      }).join('');
+      $('mePastInsight').textContent = 'Green is hours ahead of target, amber is behind. Each month is counted on its own.';
+    }
+  }
+
+  function setMonthMenuOpen(open) {
+    document.getElementById('meMonthMenu').hidden = !open;
+    document.getElementById('meMonthBtn').setAttribute('aria-expanded', String(open));
+  }
+
+  // ---- holidays modal (edit the selected month's holidays by hand) ----
+  function renderHolidayModal() {
+    const { y, m } = selectedMonth();
+    const monthTitle = new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    document.getElementById('holidayModalTitle').textContent = `🎉 Holidays · ${monthTitle}`;
+    const list = holidaysInMonth(y, m);
+    document.getElementById('holidayList').innerHTML = list.length
+      ? list.map(d => `<span class="holiday-chip">${fmtDay(d, true)}<button type="button" data-date="${d}" aria-label="Remove ${fmtDay(d)}">×</button></span>`).join('')
+      : `<span class="holiday-empty">No holidays marked for ${new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long' })}.</span>`;
+    const input = document.getElementById('holidayDateInput');
+    input.min = `${y}-${pad(m + 1)}-01`;
+    input.max = `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
+  }
+  function openHolidayModal() {
+    document.getElementById('holidayFeedback').textContent = '';
+    document.getElementById('holidayDateInput').value = '';
+    renderHolidayModal();
+    document.getElementById('holidayOverlay').style.display = 'flex';
+    document.getElementById('holidayDateInput').focus();
+  }
+  function closeHolidayModal() {
+    document.getElementById('holidayOverlay').style.display = 'none';
+    renderMyMonth();
+  }
+  function addHolidayFromInput() {
+    const input = document.getElementById('holidayDateInput'), fb = document.getElementById('holidayFeedback');
+    const { y, m } = selectedMonth();
+    fb.className = 'log-paste-feedback error';
+    if (!input.value) { fb.textContent = 'Pick a date first.'; return; }
+    if (!input.value.startsWith(monthPrefix(y, m))) { fb.textContent = `Pick a date inside ${new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}.`; return; }
+    if (holidays.has(input.value)) { fb.textContent = 'That day is already marked.'; return; }
+    addHolidays([input.value]);
+    fb.textContent = '';
+    input.value = '';
+    renderHolidayModal();
+    renderMyMonth();
+  }
+
   function switchView(name, persist) {
-    currentView = name === 'log' ? 'log' : 'overview';
-    const isLog = currentView === 'log';
-    document.getElementById('viewOverview').hidden = isLog;
-    document.getElementById('viewLog').hidden = !isLog;
+    currentView = (name === 'log' || name === 'me') ? name : 'overview';
+    [['overview', 'viewOverview', 'tabOverview'], ['log', 'viewLog', 'tabLog'], ['me', 'viewMe', 'tabMe']].forEach(([key, viewId, tabId]) => {
+      const on = key === currentView;
+      document.getElementById(viewId).hidden = !on;
+      const tab = document.getElementById(tabId);
+      tab.classList.toggle('active', on);
+      tab.setAttribute('aria-selected', String(on));
+    });
     document.getElementById('viewBar').dataset.view = currentView;
-    const tabO = document.getElementById('tabOverview'), tabL = document.getElementById('tabLog');
-    tabO.classList.toggle('active', !isLog); tabO.setAttribute('aria-selected', String(!isLog));
-    tabL.classList.toggle('active', isLog);  tabL.setAttribute('aria-selected', String(isLog));
     updateLogChip();
+    if (currentView === 'me') renderMyMonth();
     if (persist !== false) { try { localStorage.setItem('cmoView', currentView); } catch (e) { /* storage unavailable */ } }
     window.scrollTo(0, 0);
     syncDesktopMeasurements(); // the newly shown view couldn't be measured while hidden
@@ -2768,10 +3323,14 @@
     const summary = document.getElementById('logSummary');
     summary.classList.remove('short', 'clear');
     updateLogChip();
+    renderMyMonth();
 
-    if (logEntries.length === 0) {
+    const monthEntries = currentMonthEntries();
+    const monthName = new Date().toLocaleDateString(undefined, { month: 'long' });
+
+    if (monthEntries.length === 0) {
       summary.classList.add('clear');
-      summary.textContent = 'Log your daily hours to track your running-late balance automatically.';
+      summary.textContent = `No days logged in ${monthName} yet. Log your daily hours to track this month's running-late balance.`;
       syncLogBtn.style.display = 'none';
       syncEarlyLogBtn.style.display = 'none';
       logSyncMode = null;
@@ -2781,11 +3340,12 @@
     const totalDiffSeconds = getLogDiffSeconds();
     const backlogMin = Math.max(0, -totalDiffSeconds / 60);
     const aheadMin = Math.max(0, totalDiffSeconds / 60);
-    const count = logEntries.length;
+    const count = monthEntries.length;
+    const scope = `logged day${count > 1 ? 's' : ''} in ${monthName}`;
 
     if (backlogMin > 0.5) {
       summary.classList.add('short');
-      summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're running a total backlog of <b>${formatMinSec(backlogMin)}</b>.`;
+      summary.innerHTML = `Across <b>${count}</b> ${scope}, you're running a total backlog of <b>${formatMinSec(backlogMin)}</b>.`;
       syncLogBtn.style.display = 'block';
       syncLogBtn.textContent = '🔄️ Sync to Running Late Balance';
       syncEarlyLogBtn.style.display = 'none';
@@ -2795,11 +3355,11 @@
       const aheadStr = formatMinSec(aheadMin);
       let message;
       if (aheadMin >= 480) {
-        message = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${aheadStr}</b>. That's not "ahead of schedule", that's an entire extra shift you apparently didn't need. Go outside. Touch grass. You've earned it.`;
+        message = `Across <b>${count}</b> ${scope}, you're ahead by <b>${aheadStr}</b>. That's not "ahead of schedule", that's an entire extra shift you apparently didn't need. Go outside. Touch grass. You've earned it.`;
       } else if (aheadMin >= 240) {
-        message = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${aheadStr}</b>. Either you're incredibly efficient or you've secretly been cloning yourself.`;
+        message = `Across <b>${count}</b> ${scope}, you're ahead by <b>${aheadStr}</b>. Either you're incredibly efficient or you've secretly been cloning yourself.`;
       } else {
-        message = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're ahead by <b>${aheadStr}</b>. No backlog, nice work! You've earned an early departure today.`;
+        message = `Across <b>${count}</b> ${scope}, you're ahead by <b>${aheadStr}</b>. No backlog, nice work! You've earned an early departure today.`;
       }
       summary.innerHTML = message;
       syncLogBtn.style.display = 'none';
@@ -2808,7 +3368,7 @@
       logSyncMode = 'ahead';
     } else {
       summary.classList.add('clear');
-      summary.innerHTML = `Across <b>${count}</b> logged day${count > 1 ? 's' : ''}, you're exactly on target. No backlog.`;
+      summary.innerHTML = `Across <b>${count}</b> ${scope}, you're exactly on target. No backlog.`;
       syncLogBtn.style.display = 'none';
       syncEarlyLogBtn.style.display = 'none';
       logSyncMode = null;
@@ -2911,6 +3471,8 @@
   const logBulkFileInput = document.getElementById('logBulkFileInput');
   const logBulkEmployeeSelect = document.getElementById('logBulkEmployeeSelect');
   let uploadedSheetRows = null; // { header: [...], rows: [[name, ...cells], ...] }
+  let uploadedEmployeeName = ''; // the name on the selected sheet row, saved when you import
+  let uploadedHolidays = []; // holidays spotted in the sheet, saved when you import
 
   function openBulkModal() {
     logBulkOverlay.style.display = 'flex';
@@ -2928,6 +3490,8 @@
     logBulkEmployeeSelect.innerHTML = '';
     logBulkFileInput.value = '';
     uploadedSheetRows = null;
+    uploadedEmployeeName = '';
+    uploadedHolidays = [];
   }
 
   logBulkBtn.addEventListener('click', openBulkModal);
@@ -3032,11 +3596,17 @@
     logBulkFeedback.className = 'log-paste-feedback success';
 
     const fullName = String(row[0] || '').trim();
+    uploadedEmployeeName = fullName;
+    uploadedHolidays = detectSheetHolidays(header, rows, row);
     const firstName = fullName.split(/\s+/)[0] || '';
     const greeting = firstName ? `Hey ${firstName}! ` : '';
     const skippedNote = skippedDays ? ` (skipped ${skippedDays} holiday/absent/blank day${skippedDays === 1 ? '' : 's'}, no worries, those don't count)` : '';
 
-    logBulkFeedback.textContent = `${greeting}found ${lines.length} working day${lines.length === 1 ? '' : 's'} for you${skippedNote}. Take a quick look above, then hit Import when you're ready.`;
+    const holidayNote = uploadedHolidays.length
+      ? ` Also spotted ${uploadedHolidays.length} holiday${uploadedHolidays.length === 1 ? '' : 's'} (${uploadedHolidays.map(d => fmtDay(d)).join(', ')}), which will be added to My Month.`
+      : '';
+
+    logBulkFeedback.textContent = `${greeting}found ${lines.length} working day${lines.length === 1 ? '' : 's'} for you${skippedNote}.${holidayNote} Take a quick look above, then hit Import when you're ready.`;
   }
 
   function parseDateSegment(seg) {
@@ -3096,7 +3666,7 @@
 
     rawLines.forEach(line => {
       const parsed = parseBulkLine(line);
-      if (parsed) {
+      if (parsed && parsed.date) {
         logEntryCount++;
         logEntries.push({ id: logEntryCount, hh: parsed.hh, mm: parsed.mm, ss: parsed.ss, target: parsed.target, date: parsed.date });
         imported++;
@@ -3109,11 +3679,13 @@
       saveLogEntries();
       renderLogList();
       calculateLog();
-      refreshCalendar(true);
+      refreshCalendar('latest');
+      if (uploadedHolidays.length) addHolidays(uploadedHolidays);
+      if (uploadedEmployeeName) setUserName(uploadedEmployeeName);
       closeBulkModal();
     } else {
       logBulkFeedback.className = 'log-paste-feedback error';
-      logBulkFeedback.textContent = '⚠️ No valid entries found. Use format: 8h 1m 36s, 8';
+      logBulkFeedback.textContent = '⚠️ No valid entries found. Use format: 8h 1m 36s, 8, 15-10-2026 (the date is required).';
     }
   });
 
@@ -3126,11 +3698,16 @@
   let calendarYear = null;
   let calendarMonth = null;
 
-  // Re-draw the calendar after the log changes. jumpToLatest moves it to the
-  // month of the newest dated entry (first load, bulk import, clear all).
-  function refreshCalendar(jumpToLatest) {
-    if (calendarYear === null || jumpToLatest) setCalendarToLatestEntryMonth();
-    renderCalendar();
+  // Re-draw table + calendar after the log changes. 'current' goes to this
+  // month (first load, clear all); 'latest' to the newest dated entry's month
+  // (bulk import).
+  function refreshCalendar(mode) {
+    if (mode === 'latest') setCalendarToLatestEntryMonth();
+    else if (mode === 'current' || calendarYear === null) {
+      calendarYear = new Date().getFullYear();
+      calendarMonth = new Date().getMonth();
+    }
+    renderLogList();
   }
 
   function getEntryStatus(entry) {
@@ -3236,12 +3813,12 @@
   calendarPrevBtn.addEventListener('click', () => {
     calendarMonth--;
     if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
-    renderCalendar();
+    renderLogList();
   });
   calendarNextBtn.addEventListener('click', () => {
     calendarMonth++;
     if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
-    renderCalendar();
+    renderLogList();
   });
 
 
@@ -3253,6 +3830,22 @@
   // "time left" text that used to live here. This function still owns the
   // Elapsed Time / Hours Worked stats and — unrelated to any of that — the
   // Clock-Out Time card's "exceeded" (goal reached) styling.
+  // Celebration bubbles on the Clock-Out Time card: the 8 starter bubbles are in
+  // the markup; once the goal is passed, 2 more float up for every minute of
+  // overtime (up to a cap, so it stays light on the GPU).
+  const BUBBLES_BASE = 8, BUBBLES_PER_MIN = 2, BUBBLES_MAX = 80;
+  const bubbleBox = document.querySelector('#resultCard .particles');
+  function setBubbleCount(n) {
+    while (bubbleBox.children.length < n) {
+      const b = document.createElement('span');
+      const size = 3 + Math.floor(Math.random() * 5); // 3-7px
+      b.style.cssText = `left:${(2 + Math.random() * 94).toFixed(1)}%;width:${size}px;height:${size}px;` +
+        `animation-delay:${(Math.random() * 5).toFixed(1)}s;animation-duration:${(4 + Math.random() * 2.2).toFixed(1)}s;`;
+      bubbleBox.appendChild(b);
+    }
+    while (bubbleBox.children.length > n) bubbleBox.lastElementChild.remove();
+  }
+
   function updateCountdown() {
     const elapsedOut = el.elapsedOut;
     const totalHoursOut = el.totalHoursOut;
@@ -3262,6 +3855,7 @@
       renderFlipTime(elapsedOut, '--:--:--');
       renderFlipTime(totalHoursOut, '--');
       resultCard.classList.toggle('exceeded', false);
+      setBubbleCount(BUBBLES_BASE);
       return;
     }
 
@@ -3274,8 +3868,11 @@
         resultCard.classList.add('exceeded', 'flip-pulse');
         setTimeout(() => resultCard.classList.remove('flip-pulse'), 500);
       }
+      const overMin = -remainingSec / 60;
+      setBubbleCount(Math.min(BUBBLES_MAX, BUBBLES_BASE + Math.floor(overMin * BUBBLES_PER_MIN)));
     } else {
       resultCard.classList.toggle('exceeded', false);
+      setBubbleCount(BUBBLES_BASE);
     }
 
     const e = secondsToHMS(elapsedSec);
@@ -3354,7 +3951,7 @@
     if (earlyTotalMin < 0) earlyTotalMin += 1440;
 
     const actualWorkMin = Math.max(0, earlyTotalMin - state.totalBreakMin);
-    const logDiffSeconds = logEntries.length ? getLogDiffSeconds() : 0;
+    const logDiffSeconds = getLogDiffSeconds();
     const dailyLogBacklogMin = Math.max(0, -logDiffSeconds / 60);
     const dailyLogAheadMin = Math.max(0, logDiffSeconds / 60);
     const targetMin = state.targetWorkMin + dailyLogBacklogMin;
@@ -3464,7 +4061,7 @@
   loadLogEntriesFromStorage();
   renderLogList();
   calculateLog();
-  refreshCalendar(true);
+  refreshCalendar('current');
 
   calculate();
 
@@ -3476,7 +4073,14 @@
   // Tick once a second, but only while the tab is visible — a hidden tab
   // doesn't need flip animations and DOM writes every second. On return,
   // update immediately so nothing looks stale.
+  let logMonthSeen = new Date().getMonth();
   function tick() {
+    const monthNow = new Date().getMonth();
+    if (monthNow !== logMonthSeen) { // a new month began while the app was open
+      logMonthSeen = monthNow;
+      calculateLog();
+      refreshCalendar('current');
+    }
     updateCountdown();
     updateEarlyCountdown();
     updateClock();
@@ -3548,7 +4152,69 @@
   }
   document.getElementById('tabOverview').addEventListener('click', () => switchView('overview'));
   document.getElementById('tabLog').addEventListener('click', () => switchView('log'));
-  document.getElementById('logChip').addEventListener('click', () => switchView('log'));
+  document.getElementById('tabMe').addEventListener('click', () => switchView('me'));
+
+  const meNameEdit = document.getElementById('meNameEdit'), meNameInput = document.getElementById('meNameInput'), meNameSave = document.getElementById('meNameSave');
+  function toggleNameEditor(open) {
+    meNameInput.hidden = !open; meNameSave.hidden = !open; meNameEdit.hidden = open;
+    if (open) { meNameInput.value = userName; meNameInput.focus(); meNameInput.select(); }
+  }
+  meNameEdit.addEventListener('click', () => toggleNameEditor(true));
+  meNameSave.addEventListener('click', () => { setUserName(meNameInput.value); toggleNameEditor(false); });
+  meNameInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { setUserName(meNameInput.value); toggleNameEditor(false); }
+    else if (e.key === 'Escape') toggleNameEditor(false);
+  });
+  targetHoursInput.addEventListener('input', renderMyMonth);
+
+  document.getElementById('meMonthBtn').addEventListener('click', () => setMonthMenuOpen(document.getElementById('meMonthMenu').hidden));
+  document.getElementById('meMonthMenu').addEventListener('click', e => {
+    const opt = e.target.closest('.me-month-opt');
+    if (!opt) return;
+    const now = new Date();
+    meMonthKey = opt.dataset.key === `${now.getFullYear()}-${pad(now.getMonth() + 1)}` ? null : opt.dataset.key;
+    setMonthMenuOpen(false);
+    renderMyMonth();
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('#meMonthPicker')) setMonthMenuOpen(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setMonthMenuOpen(false); });
+
+  document.getElementById('meHolidayEdit').addEventListener('click', openHolidayModal);
+  document.getElementById('holidayCloseBtn').addEventListener('click', closeHolidayModal);
+  document.getElementById('holidayDoneBtn').addEventListener('click', closeHolidayModal);
+  document.getElementById('holidayOverlay').addEventListener('click', e => { if (e.target.id === 'holidayOverlay') closeHolidayModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('holidayOverlay').style.display === 'flex') closeHolidayModal(); });
+  document.getElementById('holidayAddBtn').addEventListener('click', addHolidayFromInput);
+  document.getElementById('holidayDateInput').addEventListener('keydown', e => { if (e.key === 'Enter') addHolidayFromInput(); });
+  document.getElementById('holidayList').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-date]');
+    if (!btn) return;
+    holidays.delete(btn.dataset.date);
+    saveHolidays();
+    renderHolidayModal();
+    renderMyMonth();
+  });
+  document.getElementById('holidayClearBtn').addEventListener('click', () => {
+    const { y, m } = selectedMonth();
+    holidaysInMonth(y, m).forEach(d => holidays.delete(d));
+    saveHolidays();
+    renderHolidayModal();
+    renderMyMonth();
+  });
+  setUserName(userName);
+  // Chip: behind -> fill Running Late Balance, ahead -> plan an early departure
+  // (the same actions as the Daily Log sync buttons); on target -> open the log.
+  document.getElementById('logChip').addEventListener('click', () => {
+    if (logSyncMode === 'backlog') {
+      document.getElementById('syncLogBtn').click();
+    } else if (logSyncMode === 'ahead') {
+      if (!state.clockOutDate) calculate();
+      if (state.clockOutDate) document.getElementById('syncEarlyLogBtn').click();
+      else el.clockIn.focus(); // needs a clock-in time to plan from
+    } else {
+      switchView('log');
+    }
+  });
   // Running Late Balance + Departure Planner sit under Clock-Out Time on desktop,
   // and under Shift Details on tablet/phone. Same elements are moved, so their
   // state and listeners are untouched.
@@ -3568,7 +4234,7 @@
 
   let savedView = null;
   try { savedView = localStorage.getItem('cmoView'); } catch (e) { /* storage unavailable */ }
-  switchView(savedView === 'log' ? 'log' : 'overview', false);
+  switchView(savedView === 'log' || savedView === 'me' ? savedView : 'overview', false);
   let resizeQueued = false;
   window.addEventListener('resize', () => {
     if (resizeQueued) return;
