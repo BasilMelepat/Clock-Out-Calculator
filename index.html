@@ -1562,6 +1562,15 @@
   }
   /* Two columns by default; the third (Past Months) column only exists once earlier months have logs */
   #mePastCol[hidden] { display: none; }
+  .me-absent-row { margin-top: 12px; }
+  .me-absent-row[hidden] { display: none; }
+  .me-pill.absent, .holiday-chip.absent { background: #FFF3E8; border-color: #F0C48A; color: #9A5A0F; }
+  body.dark-mode .me-pill.absent, body.dark-mode .holiday-chip.absent { background: rgba(240, 196, 138, 0.12); color: #F5C77E; }
+  .holiday-add-row select {
+    flex: 0 0 auto; padding: 10px 8px; border: 1.5px solid var(--line); border-radius: 10px;
+    background: var(--card); color: var(--deep); font: inherit; font-size: 14px; outline: none;
+  }
+  .holiday-add-row select:focus { border-color: var(--sky); }
   .wrap.wrap-me.me-two-col { grid-template-columns: 1fr 1fr; max-width: 1000px; }
   @media (max-width: 780px) { .wrap.wrap-me.me-two-col { grid-template-columns: 1fr; } }
   .me-pm-row.sel .me-pm-label { color: var(--sky); }
@@ -1590,7 +1599,7 @@
 </head>
 <body>
 <header class="app-header">
-  <span class="app-header-title">⏰ Clock me Out<span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.210</span><span class="user-chip" id="userChip" hidden></span></span>
+  <span class="app-header-title">⏰ Clock me Out<span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.212</span><span class="user-chip" id="userChip" hidden></span></span>
   <div class="view-bar" id="viewBar" data-view="overview">
     <div class="view-tabs" role="tablist" aria-label="Views">
       <button class="view-tab active" id="tabOverview" type="button" role="tab" aria-selected="true">📊 Overview</button>
@@ -1622,7 +1631,7 @@
         </div>
         <div class="log-input-box">
           <label for="targetHours">Target Hours</label>
-          <input type="text" inputmode="decimal" id="targetHours" value="8" class="log-target-input">
+          <input type="text" inputmode="decimal" id="targetHours" value="8:00" class="log-target-input" aria-label="Target hours (H:MM)">
           <span class="input-suffix">hrs</span>
         </div>
       </div>
@@ -1888,10 +1897,14 @@
         <button type="button" class="me-link-btn" id="meHolidayEdit">✏️ Edit</button>
       </div>
       <div class="me-pills" id="meHolidayPills"></div>
+      <div class="me-off-row me-absent-row" id="meAbsentRow" hidden>
+        <span id="meAbsentLine">Absent: None</span>
+      </div>
+      <div class="me-pills" id="meAbsentPills"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><span>🗓️ Weekday Pattern</span></div>
+      <div class="card-title"><span id="meWeekdayTitle">🗓️ Weekday Pattern</span></div>
       <div id="meWeekdays"></div>
       <div class="me-insight" id="meWeekdayInsight"></div>
     </div>
@@ -1929,16 +1942,20 @@
 <div class="modal-overlay" id="holidayOverlay" style="display:none;">
   <div class="modal-box">
     <div class="modal-header">
-      <span id="holidayModalTitle">🎉 Holidays</span>
+      <span id="holidayModalTitle">🗓️ Holidays & absences</span>
       <button class="modal-close" id="holidayCloseBtn" type="button" aria-label="Close">❌</button>
     </div>
     <div class="holiday-list" id="holidayList"></div>
     <div class="holiday-add-row">
-      <input type="date" id="holidayDateInput" aria-label="Holiday date">
-      <button class="me-save-btn" id="holidayAddBtn" type="button">Add holiday</button>
+      <input type="date" id="holidayDateInput" aria-label="Date">
+      <select id="holidayTypeSelect" aria-label="Type">
+        <option value="holiday">Holiday</option>
+        <option value="absent">Absent</option>
+      </select>
+      <button class="me-save-btn" id="holidayAddBtn" type="button">Add</button>
     </div>
     <div class="log-paste-feedback" id="holidayFeedback"></div>
-    <div class="modal-hint">Holidays aren't counted as working days when the Month Goal works out what's left. They're also picked up from your attendance sheet when you import it.</div>
+    <div class="modal-hint">Holidays and absent days aren't counted as working days left in the Month Goal. Both are also picked up from your attendance sheet when you import it.</div>
     <div class="holiday-actions">
       <button class="log-io-btn" id="holidayClearBtn" type="button">🗑️ Clear month</button>
       <button class="modal-import-btn" id="holidayDoneBtn" type="button">Done</button>
@@ -2466,7 +2483,7 @@
 
   function calculate() {
     const clockIn = el.clockIn.value;
-    const targetHours = Math.min(MAX_TARGET_HOURS, parseFloat(el.targetHours.value) || 0);
+    const targetHours = getTargetHours();
     const lateMinutes = parseFloat(el.lateMinutes.value) || 0;
     const lateSeconds = parseFloat(el.lateSeconds.value) || 0;
     const rawBacklogMin = Math.max(0, lateMinutes + lateSeconds / 60);
@@ -2555,14 +2572,14 @@
 
     if (backlogMin <= 0) {
       box.classList.add('clear');
-      box.innerHTML = `✅ No outstanding backlog. You are on track to meet your ${targetHours}h target today.`;
+      box.innerHTML = `✅ No outstanding backlog. You are on track to meet your ${formatDuration(targetHours * 60)} target today.`;
       return;
     }
 
     const backlogStr = formatMinSec(backlogMin);
 
     if (!includeLate) {
-      box.innerHTML = `⏸️ A backlog of <b>${backlogStr}</b> is recorded but currently excluded from today's target, which remains at <b>${targetHours}h</b>. Enable the toggle above to factor it into today's plan.`;
+      box.innerHTML = `⏸️ A backlog of <b>${backlogStr}</b> is recorded but currently excluded from today's target, which remains at <b>${formatDuration(targetHours * 60)}</b>. Enable the toggle above to factor it into today's plan.`;
       return;
     }
 
@@ -2696,7 +2713,7 @@
         return;
       }
       if (state.clockIn) document.getElementById('clockIn').value = state.clockIn;
-      if (state.targetHours) { document.getElementById('targetHours').value = state.targetHours; capTargetHours(); }
+      if (state.targetHours) { document.getElementById('targetHours').value = state.targetHours; capTargetHours(); normalizeTargetHours(); }
       if (Array.isArray(state.breaks)) {
         breaksContainer.innerHTML = '';
         breakCount = 0;
@@ -2728,18 +2745,44 @@
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
   }
-  // Target hours can't exceed a full day.
+  // Target hours can't exceed a full day, and are shown as H:MM (8:15, 8:30, 8:45).
   const MAX_TARGET_HOURS = 24;
   const targetHoursInput = document.getElementById('targetHours');
-  function capTargetHours() {
-    const v = parseFloat(targetHoursInput.value);
-    if (v > MAX_TARGET_HOURS) targetHoursInput.value = String(MAX_TARGET_HOURS);
+  // Reads "8:15", "8.25" or "8" (comma decimals too) as decimal hours.
+  function parseTargetHours(str) {
+    const t = String(str || '').trim().replace(',', '.');
+    if (t.includes(':')) {
+      const [h, m] = t.split(':');
+      const hh = parseInt(h, 10), mm = parseInt(m, 10);
+      return (isNaN(hh) ? 0 : hh) + Math.min(59, isNaN(mm) ? 0 : mm) / 60;
+    }
+    const v = parseFloat(t);
+    return isNaN(v) ? 0 : v;
   }
+  function getTargetHours() { return Math.min(MAX_TARGET_HOURS, Math.max(0, parseTargetHours(targetHoursInput.value))); }
+  function formatTargetHM(hours) {
+    const t = Math.round(Math.min(MAX_TARGET_HOURS, Math.max(0, hours)) * 60);
+    return `${Math.floor(t / 60)}:${pad(t % 60)}`;
+  }
+  function capTargetHours() {
+    if (parseTargetHours(targetHoursInput.value) > MAX_TARGET_HOURS) targetHoursInput.value = formatTargetHM(MAX_TARGET_HOURS);
+  }
+  // Tidy whatever was typed (or saved by an older version) into H:MM
+  function normalizeTargetHours() { targetHoursInput.value = formatTargetHM(parseTargetHours(targetHoursInput.value)); }
   targetHoursInput.addEventListener('input', capTargetHours);
-  targetHoursInput.addEventListener('change', capTargetHours);
+  targetHoursInput.addEventListener('change', normalizeTargetHours);
+  targetHoursInput.addEventListener('blur', normalizeTargetHours);
+  // Arrow keys move in 15-minute steps: 8:00, 8:15, 8:30, 8:45, 9:00 ...
+  targetHoursInput.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    const t = Math.round(parseTargetHours(targetHoursInput.value) * 60);
+    const next = e.key === 'ArrowUp' ? (Math.floor(t / 15) + 1) * 15 : (Math.ceil(t / 15) - 1) * 15;
+    targetHoursInput.value = formatTargetHM(Math.min(MAX_TARGET_HOURS * 60, Math.max(0, next)) / 60);
+    targetHoursInput.dispatchEvent(new Event('input', { bubbles: true }));
+  });
   logTarget.addEventListener('input', () => clampField(logTarget, MAX_TARGET_HOURS));
   enableArrowKeyStep(logTarget, 0, MAX_TARGET_HOURS);
-  enableArrowKeyStep(targetHoursInput, 0, MAX_TARGET_HOURS, 0.25);
 
   function parseDurationText(text) {
     const clean = (text || '').trim();
@@ -2926,6 +2969,7 @@
     const [dy, dm] = date.split('-').map(Number);
     calendarYear = dy;
     calendarMonth = dm - 1;
+    followMonthInMyMonth(dy, dm - 1);
     renderLogList();
     calculateLog();
     saveLogEntries();
@@ -2974,9 +3018,11 @@
   let userName = '';
   let meMonthKey = null; // null = the current month, otherwise 'YYYY-MM' of an earlier month
   let holidays = new Set(); // 'YYYY-MM-DD' dates that aren't working days
+  let absentDays = new Set(); // 'YYYY-MM-DD' working days you were absent
   try {
     userName = localStorage.getItem('cmoUserName') || '';
     holidays = new Set(JSON.parse(localStorage.getItem('cmoHolidays') || '[]').filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)));
+    absentDays = new Set(JSON.parse(localStorage.getItem('cmoAbsent') || '[]').filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)));
   } catch (e) { /* storage unavailable or corrupt: start with no holidays */ }
 
   // Compact duration for the chip: "2h 5m" from an hour up, "10m 50s" below it.
@@ -3027,10 +3073,19 @@
   function saveHolidays() {
     try { localStorage.setItem('cmoHolidays', JSON.stringify([...holidays].sort())); } catch (e) { /* storage unavailable */ }
   }
-  function addHolidays(list) { list.forEach(d => holidays.add(d)); saveHolidays(); }
+  function saveAbsent() {
+    try { localStorage.setItem('cmoAbsent', JSON.stringify([...absentDays].sort())); } catch (e) { /* storage unavailable */ }
+  }
+  // A day is either a holiday or an absence, never both
+  function addHolidays(list) { list.forEach(d => { holidays.add(d); absentDays.delete(d); }); saveHolidays(); saveAbsent(); }
+  function addAbsences(list) { list.forEach(d => { absentDays.add(d); holidays.delete(d); }); saveHolidays(); saveAbsent(); }
   function holidaysInMonth(y, m) {
     const prefix = monthPrefix(y, m);
     return [...holidays].filter(d => d.startsWith(prefix)).sort();
+  }
+  function absencesInMonth(y, m) {
+    const prefix = monthPrefix(y, m);
+    return [...absentDays].filter(d => d.startsWith(prefix)).sort();
   }
   function isWeeklyOffDay(wd) { return wd === 0; } // Sundays are the day off; mark any other off days as holidays
   function workingDaysInMonth(y, m) {
@@ -3074,12 +3129,30 @@
     return found;
   }
 
+  // Absent days: an "absent" marker in your own row of the attendance sheet
+  function detectSheetAbsences(header, ownRow) {
+    const found = [];
+    for (let col = 1; col < header.length; col++) {
+      const date = parseDateSegment(String(header[col] || '').trim());
+      if (!date) continue;
+      const cell = String(ownRow[col] === undefined || ownRow[col] === null ? '' : ownRow[col]).trim();
+      if (!/^\d{1,2}:\d{2}/.test(cell) && /^(a|ab|abs|lop)$|absent/i.test(cell)) found.push(date);
+    }
+    return found;
+  }
+
   // ---- which month My Month is showing ----
+  // Earlier months with logs, newest first: the 12 months before the current one.
   function previousMonthKeys() {
     const now = new Date();
     const curKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+    const oldest = new Date(now.getFullYear(), now.getMonth() - 12, 1);
+    const oldestKey = `${oldest.getFullYear()}-${pad(oldest.getMonth() + 1)}`;
     const keys = new Set();
-    logEntries.forEach(e => { if (e.date && e.date.slice(0, 7) < curKey) keys.add(e.date.slice(0, 7)); });
+    logEntries.forEach(e => {
+      const k = e.date ? e.date.slice(0, 7) : '';
+      if (k && k < curKey && k >= oldestKey) keys.add(k);
+    });
     return [...keys].sort().reverse();
   }
   function selectedMonth() {
@@ -3112,7 +3185,7 @@
     const monthTitle = monthDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     const monthName = monthDate.toLocaleDateString(undefined, { month: 'long' });
     const cur = entriesForMonth(y, m, isCurrent);
-    const targetSec = (parseFloat($('targetHours').value) || 8) * 3600;
+    const targetSec = (getTargetHours() || 8) * 3600;
     const selKey = `${y}-${pad(m + 1)}`;
     const curKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
 
@@ -3174,7 +3247,8 @@
       for (let d = now.getDate(); d <= lastDay; d++) {
         if (d === now.getDate() && loggedToday) continue;
         if (isWeeklyOffDay(new Date(y, m, d).getDay())) continue;
-        if (holidays.has(`${y}-${pad(m + 1)}-${pad(d)}`)) continue;
+        const dayKey = `${y}-${pad(m + 1)}-${pad(d)}`;
+        if (holidays.has(dayKey) || absentDays.has(dayKey)) continue;
         remaining++;
       }
     }
@@ -3200,11 +3274,16 @@
     const monthHolidays = holidaysInMonth(y, m);
     $('meHolidayLine').textContent = `Holidays: ${monthHolidays.length ? monthHolidays.length : 'None'} in ${monthName}`;
     $('meHolidayPills').innerHTML = monthHolidays.map(d => `<span class="me-pill">${fmtDay(d)}</span>`).join('');
+    const monthAbsences = absencesInMonth(y, m);
+    $('meAbsentRow').hidden = monthAbsences.length === 0;
+    $('meAbsentLine').textContent = `Absent: ${monthAbsences.length} in ${monthName}`;
+    $('meAbsentPills').innerHTML = monthAbsences.map(d => `<span class="me-pill absent">${fmtDay(d)}</span>`).join('');
 
-    // Weekday pattern (all dated history)
+    // Weekday pattern: only the month picked in the first card
+    $('meWeekdayTitle').textContent = `🗓️ Weekday Pattern · ${monthName}`;
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const agg = dayNames.map(() => ({ sum: 0, n: 0 }));
-    logEntries.filter(e => e.date).forEach(e => { const a = agg[entryWeekday(e)]; a.sum += entrySeconds(e); a.n++; });
+    cur.filter(e => e.date).forEach(e => { const a = agg[entryWeekday(e)]; a.sum += entrySeconds(e); a.n++; });
     const avgs = agg.map(a => (a.n ? a.sum / a.n : null));
     const maxAvg = Math.max(targetSec, ...avgs.filter(v => v !== null));
     const scale = maxAvg * 1.08;
@@ -3220,7 +3299,7 @@
       const lo = withData.reduce((a, b) => (avgs[b] < avgs[a] ? b : a));
       $('meWeekdayInsight').textContent = hi === lo ? '' : `Strongest: ${dayNames[hi]} (${fmtHM(avgs[hi])}) · Lightest: ${dayNames[lo]} (${fmtHM(avgs[lo])}). The line marks your target.`;
     } else {
-      $('meWeekdayInsight').textContent = 'Log a few more days to see your weekly pattern.';
+      $('meWeekdayInsight').textContent = `Log a few more days in ${monthName} to see your weekly pattern.`;
     }
 
     // Past months (read-only history, newest first)
@@ -3230,7 +3309,7 @@
       const mo = months[key] || (months[key] = { diff: 0, n: 0 });
       mo.diff += entrySeconds(e) - e.target * 3600; mo.n++;
     });
-    const keys = Object.keys(months).filter(k => k < curKey).sort().reverse().slice(0, 6);
+    const keys = prevKeys; // up to the last 12 months
     // Past Months only exists (and the page only goes to 3 columns) once earlier months have logs
     const hasPast = keys.length > 0;
     $('mePastCol').hidden = !hasPast;
@@ -3255,7 +3334,7 @@
           `<div class="me-pm-bar"><div class="me-pm-neg">${neg ? `<i style="width:${w}%"></i>` : ''}</div><div class="me-pm-pos">${pos ? `<i style="width:${w}%"></i>` : ''}</div></div>` +
           `<span class="me-pm-val ${pos ? 'ahead' : neg ? 'behind' : ''}">${val}</span></div>`;
       }).join('');
-      $('mePastInsight').textContent = 'Green is hours ahead of target, amber is behind. Each month is counted on its own.';
+      $('mePastInsight').textContent = 'Your last 12 months. Green is hours ahead of target, amber is behind. Each month is counted on its own.';
     }
   }
 
@@ -3264,15 +3343,17 @@
     document.getElementById('meMonthBtn').setAttribute('aria-expanded', String(open));
   }
 
-  // ---- holidays modal (edit the selected month's holidays by hand) ----
+  // ---- holidays & absences modal (edit the selected month by hand) ----
   function renderHolidayModal() {
     const { y, m } = selectedMonth();
     const monthTitle = new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-    document.getElementById('holidayModalTitle').textContent = `🎉 Holidays · ${monthTitle}`;
-    const list = holidaysInMonth(y, m);
-    document.getElementById('holidayList').innerHTML = list.length
-      ? list.map(d => `<span class="holiday-chip">${fmtDay(d, true)}<button type="button" data-date="${d}" aria-label="Remove ${fmtDay(d)}">×</button></span>`).join('')
-      : `<span class="holiday-empty">No holidays marked for ${new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long' })}.</span>`;
+    document.getElementById('holidayModalTitle').textContent = `🗓️ Holidays & absences · ${monthTitle}`;
+    const chips = holidaysInMonth(y, m).map(d => ({ d, type: 'holiday' }))
+      .concat(absencesInMonth(y, m).map(d => ({ d, type: 'absent' })))
+      .sort((a, b) => (a.d < b.d ? -1 : 1));
+    document.getElementById('holidayList').innerHTML = chips.length
+      ? chips.map(c => `<span class="holiday-chip${c.type === 'absent' ? ' absent' : ''}">${fmtDay(c.d, true)}${c.type === 'absent' ? ' · Absent' : ''}<button type="button" data-date="${c.d}" aria-label="Remove ${fmtDay(c.d)}">×</button></span>`).join('')
+      : `<span class="holiday-empty">Nothing marked for ${new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long' })}.</span>`;
     const input = document.getElementById('holidayDateInput');
     input.min = `${y}-${pad(m + 1)}-01`;
     input.max = `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
@@ -3290,12 +3371,13 @@
   }
   function addHolidayFromInput() {
     const input = document.getElementById('holidayDateInput'), fb = document.getElementById('holidayFeedback');
+    const type = document.getElementById('holidayTypeSelect').value;
     const { y, m } = selectedMonth();
     fb.className = 'log-paste-feedback error';
     if (!input.value) { fb.textContent = 'Pick a date first.'; return; }
     if (!input.value.startsWith(monthPrefix(y, m))) { fb.textContent = `Pick a date inside ${new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}.`; return; }
-    if (holidays.has(input.value)) { fb.textContent = 'That day is already marked.'; return; }
-    addHolidays([input.value]);
+    if ((type === 'holiday' ? holidays : absentDays).has(input.value)) { fb.textContent = `That day is already marked as ${type === 'holiday' ? 'a holiday' : 'absent'}.`; return; }
+    (type === 'holiday' ? addHolidays : addAbsences)([input.value]); // moves it if it was marked the other way
     fb.textContent = '';
     input.value = '';
     renderHolidayModal();
@@ -3473,6 +3555,7 @@
   let uploadedSheetRows = null; // { header: [...], rows: [[name, ...cells], ...] }
   let uploadedEmployeeName = ''; // the name on the selected sheet row, saved when you import
   let uploadedHolidays = []; // holidays spotted in the sheet, saved when you import
+  let uploadedAbsences = []; // absent days spotted in your row, saved when you import
 
   function openBulkModal() {
     logBulkOverlay.style.display = 'flex';
@@ -3492,6 +3575,7 @@
     uploadedSheetRows = null;
     uploadedEmployeeName = '';
     uploadedHolidays = [];
+    uploadedAbsences = [];
   }
 
   logBulkBtn.addEventListener('click', openBulkModal);
@@ -3568,7 +3652,7 @@
     if (!uploadedSheetRows) return;
     const { header, rows } = uploadedSheetRows;
     const row = rows[rowIndex];
-    const targetHoursVal = parseInt(document.getElementById('targetHours').value, 10) || 8;
+    const targetHoursVal = Math.floor(getTargetHours()) || 8;
 
     const lines = [];
     let skippedDays = 0;
@@ -3598,6 +3682,7 @@
     const fullName = String(row[0] || '').trim();
     uploadedEmployeeName = fullName;
     uploadedHolidays = detectSheetHolidays(header, rows, row);
+    uploadedAbsences = detectSheetAbsences(header, row);
     const firstName = fullName.split(/\s+/)[0] || '';
     const greeting = firstName ? `Hey ${firstName}! ` : '';
     const skippedNote = skippedDays ? ` (skipped ${skippedDays} holiday/absent/blank day${skippedDays === 1 ? '' : 's'}, no worries, those don't count)` : '';
@@ -3606,7 +3691,11 @@
       ? ` Also spotted ${uploadedHolidays.length} holiday${uploadedHolidays.length === 1 ? '' : 's'} (${uploadedHolidays.map(d => fmtDay(d)).join(', ')}), which will be added to My Month.`
       : '';
 
-    logBulkFeedback.textContent = `${greeting}found ${lines.length} working day${lines.length === 1 ? '' : 's'} for you${skippedNote}.${holidayNote} Take a quick look above, then hit Import when you're ready.`;
+    const absenceNote = uploadedAbsences.length
+      ? ` ${uploadedAbsences.length} absent day${uploadedAbsences.length === 1 ? '' : 's'} (${uploadedAbsences.map(d => fmtDay(d)).join(', ')}) will be added too.`
+      : '';
+
+    logBulkFeedback.textContent = `${greeting}found ${lines.length} working day${lines.length === 1 ? '' : 's'} for you${skippedNote}.${holidayNote}${absenceNote} Take a quick look above, then hit Import when you're ready.`;
   }
 
   function parseDateSegment(seg) {
@@ -3681,6 +3770,7 @@
       calculateLog();
       refreshCalendar('latest');
       if (uploadedHolidays.length) addHolidays(uploadedHolidays);
+      if (uploadedAbsences.length) addAbsences(uploadedAbsences);
       if (uploadedEmployeeName) setUserName(uploadedEmployeeName);
       closeBulkModal();
     } else {
@@ -3701,11 +3791,18 @@
   // Re-draw table + calendar after the log changes. 'current' goes to this
   // month (first load, clear all); 'latest' to the newest dated entry's month
   // (bulk import).
+  // My Month shows the same month the Daily Log just landed on (null = current month)
+  function followMonthInMyMonth(y, m) {
+    const now = new Date();
+    meMonthKey = y === now.getFullYear() && m === now.getMonth() ? null : `${y}-${pad(m + 1)}`;
+  }
+
   function refreshCalendar(mode) {
-    if (mode === 'latest') setCalendarToLatestEntryMonth();
+    if (mode === 'latest') { setCalendarToLatestEntryMonth(); followMonthInMyMonth(calendarYear, calendarMonth); }
     else if (mode === 'current' || calendarYear === null) {
       calendarYear = new Date().getFullYear();
       calendarMonth = new Date().getMonth();
+      followMonthInMyMonth(calendarYear, calendarMonth);
     }
     renderLogList();
   }
@@ -4190,14 +4287,18 @@
     const btn = e.target.closest('button[data-date]');
     if (!btn) return;
     holidays.delete(btn.dataset.date);
+    absentDays.delete(btn.dataset.date);
     saveHolidays();
+    saveAbsent();
     renderHolidayModal();
     renderMyMonth();
   });
   document.getElementById('holidayClearBtn').addEventListener('click', () => {
     const { y, m } = selectedMonth();
     holidaysInMonth(y, m).forEach(d => holidays.delete(d));
+    absencesInMonth(y, m).forEach(d => absentDays.delete(d));
     saveHolidays();
+    saveAbsent();
     renderHolidayModal();
     renderMyMonth();
   });
