@@ -51,10 +51,7 @@
   }
   .log-input-card {
     display: grid;
-    /* Hours Clocked and Target Hours share a row; Date gets its own full
-       width row below (via .log-date-box) instead of squeezing into a third
-       column — the native date input's calendar UI needs more room than any
-       fixed fraction of a 3-column split can reliably give it. */
+    /* Hours Clocked and Target Hours share a row; Date gets its own full-width row (the native date picker needs the room). */
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     align-items: end;
@@ -91,9 +88,7 @@
   .log-refresh-btn:focus-visible { opacity: 0.85; background: var(--sky-light); outline: none; }
   .log-refresh-btn.active { opacity: 1; }
   .log-input-box {
-    /* Grid items default to min-width: auto, which stops them shrinking
-       below their content's intrinsic size — override so the equal
-       minmax(0, 1fr) column widths above actually apply. */
+    /* Grid items default to min-width: auto; reset it so the equal minmax(0, 1fr) columns apply. */
     min-width: 0;
     position: relative;
   }
@@ -271,9 +266,7 @@
   }
   .sync-btn.early-sync-btn:hover { background: #E4F8ED; }
   * { box-sizing: border-box; }
-  /* Form controls don't inherit the page font by default in most browsers —
-     force them all to match, and give every field the same weight, so time/
-     number/text/select fields all read consistently. */
+  /* Form controls don't inherit the page font by default; force one consistent font and weight. */
   input, select, textarea, button {
     font-family: inherit;
     font-weight: 400;
@@ -354,12 +347,7 @@
     align-items: start;
   }
   .col { display: flex; flex-direction: column; gap: 16px; }
-  /* Desktop (the true 3-side-by-side-sections layout): each column scrolls
-     on its own instead of the whole page scrolling together, and the
-     scrollbar is hidden while the scroll itself still works (wheel,
-     trackpad, keyboard, touch). Scoped to this breakpoint only — at
-     narrower widths the layout stacks, where normal whole-page scrolling
-     is what you want. */
+  /* Desktop: each column scrolls on its own with the scrollbar hidden (wheel, trackpad, keyboard and touch still work). Stacked layouts below this width scroll as a whole page. */
   @media (min-width: 1101px) {
     body {
       height: 100vh;
@@ -369,13 +357,7 @@
       flex: 1 1 auto;
       min-height: 0;
       align-items: stretch;
-      /* Without an explicit row track, a grid's implicit row defaults to
-         "auto" sizing, which grows to fit its tallest column's own content
-         (the actual bug here) instead of respecting .wrap's own resolved
-         flex height — even with align-items: stretch and min-height: 0 on
-         the columns. Pinning the row to .wrap's height is what actually
-         lets a taller column's overflow scroll instead of spilling past
-         the viewport with nothing to scroll it. */
+      /* Pin the grid row to .wrap's height so a taller column scrolls instead of growing past the viewport. */
       grid-template-rows: minmax(0, 1fr);
     }
     .col {
@@ -384,11 +366,7 @@
       overflow-x: hidden;
       scrollbar-width: none;      /* Firefox */
       -ms-overflow-style: none;   /* legacy Edge/IE */
-      /* Settles the scroll on a card once it's either fully stacked behind
-         the one above it or fully revealed, instead of stopping half-stacked
-         mid-scroll. "proximity" (not "mandatory") only snaps when a flick
-         already lands close to one of those points, so normal scrolling
-         still feels free rather than snapping on every small movement. */
+      /* Scroll-snap settles on a stacked or fully revealed card; "proximity" only snaps when a flick lands close, so normal scrolling stays free. */
       scroll-snap-type: y proximity;
     }
     .col::-webkit-scrollbar { width: 0; height: 0; }  /* Chrome/Safari/Edge */
@@ -490,9 +468,7 @@
   }
   .row { display: flex; gap: 12px; margin-bottom: 14px; }
   .row > div { flex: 1; }
-  /* Breaks live inline inside the Shift Details card as compact rows,
-     instead of their own separate boxed card — inspired by a reference
-     "Clock Me Out" build's seamless "Breaks" list. */
+  /* Breaks sit inline in the Shift Details card as compact rows rather than a separate boxed card. */
   .breaks-block { margin-top: 18px; }
   .breaks-block > label {
     font-size: 12.5px;
@@ -591,9 +567,7 @@
   .result {
     position: relative;
     overflow: hidden;
-    /* .col is a flex column and this card has overflow: hidden (min-height
-       auto resolves to 0), so it could get squeezed and clip its own
-       content — keep a floor and don't let it shrink. */
+    /* .col is a flex column and this card has overflow: hidden, so it could be squeezed and clip its content; keep a floor and don't shrink. */
     min-height: 206px;
     flex-shrink: 0;
     background: linear-gradient(120deg, #0B2A4A 0%, #0F3A63 45%, #0B2A4A 100%);
@@ -1268,9 +1242,7 @@
     margin-top: 24px;
     padding-bottom: 4px;
   }
-  /* Two copies of the footer, swapped purely by CSS: desktop shows the one
-     inside the Shift Details column (under Clock-Out Time); when the columns
-     stack (<=1100px) the page-level one after .wrap shows instead. */
+  /* Desktop shows the footer inside the middle column; when the columns stack (<=1100px) the page-level footer after the views shows instead. */
   .footer-stacked { display: none; }
   @media (max-width: 1100px) {
     .footer-desktop { display: none; }
@@ -1406,6 +1378,14 @@
     transition: transform 0.15s ease;
   }
   .log-chip:hover { transform: translateY(-1px); }
+  @keyframes chipPop {
+    0% { opacity: 0; transform: translateY(10px) scale(0.7); }
+    60% { opacity: 1; transform: translateY(-2px) scale(1.06); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  /* "backwards" only holds the first frame during the delay, so the hover lift keeps working afterwards */
+  .log-chip { animation: chipPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s backwards; }
+  @media (prefers-reduced-motion: reduce) { .log-chip { animation: none; } }
   .log-chip[hidden] { display: none; }
   .log-chip.behind { background: #FFF3E8; border-color: #F0C48A; color: #9A5A0F; }
   body.dark-mode .view-tab.active { box-shadow: none; }
@@ -1562,6 +1542,20 @@
   }
   /* Two columns by default; the third (Past Months) column only exists once earlier months have logs */
   #mePastCol[hidden] { display: none; }
+  .me-reset-row { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .me-danger-btn {
+    border: 1px solid var(--line); background: transparent; color: var(--muted);
+    font: inherit; font-size: 12.5px; font-weight: 700; padding: 7px 12px; border-radius: 10px; cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .me-danger-btn:hover { background: #FFF0EE; border-color: #C0392B; color: #C0392B; }
+  body.dark-mode .me-danger-btn:hover { background: rgba(192, 57, 43, 0.15); color: #FF8A80; border-color: #FF8A80; }
+  .reset-body { font-size: 13.5px; line-height: 1.5; color: var(--deep); }
+  .reset-body p { margin: 0 0 10px; }
+  .reset-body ul { margin: 0 0 10px; padding-left: 20px; }
+  .reset-body li { margin-bottom: 4px; }
+  .reset-confirm-btn { background: #C0392B; }
+  .reset-confirm-btn:hover { background: #9E2B20; }
   .me-absent-row { margin-top: 12px; }
   .me-absent-row[hidden] { display: none; }
   .me-pill.absent, .holiday-chip.absent { background: #FFF3E8; border-color: #F0C48A; color: #9A5A0F; }
@@ -1599,12 +1593,12 @@
 </head>
 <body>
 <header class="app-header">
-  <span class="app-header-title">⏰ Clock me Out<span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.212</span><span class="user-chip" id="userChip" hidden></span></span>
+  <span class="app-header-title">⏰ Clock me Out<span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.216</span><span class="user-chip" id="userChip" hidden></span></span>
   <div class="view-bar" id="viewBar" data-view="overview">
     <div class="view-tabs" role="tablist" aria-label="Views">
-      <button class="view-tab active" id="tabOverview" type="button" role="tab" aria-selected="true">📊 Overview</button>
+      <button class="view-tab active" id="tabOverview" type="button" role="tab" aria-selected="true">💼 Shift Today</button>
       <button class="view-tab" id="tabLog" type="button" role="tab" aria-selected="false">📅 Daily Log</button>
-    <button class="view-tab" id="tabMe" type="button" role="tab" aria-selected="false">👤 My Month</button>
+    <button class="view-tab" id="tabMe" type="button" role="tab" aria-selected="false">📊 Overview</button>
     </div>
     </div>
   <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
@@ -1870,6 +1864,9 @@
         <button class="me-save-btn" id="meNameSave" type="button" hidden>Save</button>
       </div>
       <p class="me-hint" id="meNameHint">Tip: upload your attendance sheet in Bulk Import and your name is picked up automatically.</p>
+      <div class="me-reset-row">
+        <button class="me-danger-btn" id="meResetBtn" type="button">🗑️ Reset all data</button>
+      </div>
     </div>
 
     <div class="card">
@@ -1929,13 +1926,36 @@
       <span>⌛ Work Log Bulk Import</span>
       <button class="modal-close" id="logBulkCloseBtn" type="button" aria-label="Close">❌</button>
     </div>
-    <button id="logBulkUploadBtn" class="modal-upload-btn" type="button">📎 Upload Attendance Excel (.xlsx)</button>
-    <input type="file" id="logBulkFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
+    <button id="logBulkUploadBtn" class="modal-upload-btn" type="button">📎 Upload Attendance Excel(s) (.xlsx)</button>
+    <input type="file" id="logBulkFileInput" accept=".xlsx,.xls,.csv" multiple style="display:none;">
     <select id="logBulkEmployeeSelect" class="modal-employee-select" style="display:none;"></select>
     <textarea id="logBulkArea" class="modal-textarea" placeholder="0h 0m 0s, 8, dd-mm-yyyy&#10;0h 0m 0s, 8, dd-mm-yyyy&#10;0h 0m 0s, 8, dd-mm-yyyy"></textarea>
     <div class="modal-hint">One entry per line: <b>Xh Ym Zs, Target, dd-mm-yyyy</b> (comma or tab separated). The date is required (lines without one are skipped); the target is optional and any part (h/m/s) can be omitted.</div>
     <div class="log-paste-feedback" id="logBulkFeedback"></div>
     <button id="logBulkImportBtn" class="modal-import-btn" type="button">Import</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="resetOverlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>⚠️ Reset all data?</span>
+      <button class="modal-close" id="resetCloseBtn" type="button" aria-label="Close">❌</button>
+    </div>
+    <div class="reset-body">
+      <p>This permanently deletes everything Clock me Out has saved in this browser:</p>
+      <ul>
+        <li>Your Daily Log, every month</li>
+        <li>Clock-in time, target hours, breaks, and your running-late and departure plans</li>
+        <li>Holidays and absences</li>
+        <li>Your name</li>
+      </ul>
+      <p>Your light/dark choice is kept. This can't be undone, so use <b>Copy Log</b> in the Daily Log first if you want a backup.</p>
+    </div>
+    <div class="holiday-actions">
+      <button class="log-io-btn" id="resetCancelBtn" type="button">Cancel</button>
+      <button class="modal-import-btn reset-confirm-btn" id="resetConfirmBtn" type="button">Reset everything</button>
+    </div>
   </div>
 </div>
 
@@ -2214,8 +2234,6 @@
     lateSectionActive: false
   };
 
-  // Cache DOM nodes that are queried on every calculate()/tick call instead of
-  // re-running getElementById on every keystroke and every 1s interval tick.
   const el = {
     clockIn: document.getElementById('clockIn'),
     targetHours: document.getElementById('targetHours'),
@@ -2641,7 +2659,10 @@
   let logEditingId = null;
   let logEntries = [];
 
+  let resettingData = false; // true while 'Reset all data' runs, so nothing re-saves what was just wiped
+
   function saveLogEntries() {
+    if (resettingData) return;
     try {
       localStorage.setItem('cmoLogEntries', JSON.stringify(logEntries));
       localStorage.setItem('cmoLogEntryCount', String(logEntryCount));
@@ -2667,12 +2688,7 @@
     return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
   }
 
-  // Small debounce helper: several inputs (clock-in, target hours, each break
-  // field) call saveShiftState() on every keystroke, which used to run a
-  // JSON.stringify + localStorage.setItem synchronously per keypress. Wrapping
-  // the actual save so it fires once shortly after typing settles avoids that
-  // per-keystroke I/O without changing when data actually gets persisted from
-  // the user's point of view.
+  // Wait for typing to settle before saving instead of writing on every keystroke.
   function debounce(fn, delay) {
     let timer = null;
     return function debounced(...args) {
@@ -2682,6 +2698,7 @@
   }
 
   function saveShiftStateNow() {
+    if (resettingData) return;
     try {
       const breaks = [];
       breaksContainer.querySelectorAll('.break-row').forEach(item => {
@@ -2992,8 +3009,6 @@
     calculateLog();
   });
 
-  // One shared computation of the total clocked-vs-target diff (in seconds)
-  // for calculateLog, the balance chip, the sync handlers and the early plan.
   // Backlog / early-departure maths only looks at the ongoing calendar month:
   // earlier months are ignored. (Days saved before the date became mandatory
   // have no date, so they are counted as part of the current month.)
@@ -3168,9 +3183,9 @@
     return logEntries.filter(e => (e.date ? e.date.startsWith(monthPrefix(y, m)) : isCurrent));
   }
 
-  function setUserName(name) {
+  function setUserName(name, persist) {
     userName = String(name || '').trim().slice(0, 40);
-    try { localStorage.setItem('cmoUserName', userName); } catch (e) { /* storage unavailable */ }
+    if (persist !== false) { try { localStorage.setItem('cmoUserName', userName); } catch (e) { /* storage unavailable */ } }
     const chip = document.getElementById('userChip');
     chip.textContent = userName;
     chip.hidden = !userName;
@@ -3384,6 +3399,7 @@
     renderMyMonth();
   }
 
+  // Internal names: 'overview' is the 💼 Shift Today tab, 'me' is the 📊 Overview tab.
   function switchView(name, persist) {
     currentView = (name === 'log' || name === 'me') ? name : 'overview';
     [['overview', 'viewOverview', 'tabOverview'], ['log', 'viewLog', 'tabLog'], ['me', 'viewMe', 'tabMe']].forEach(([key, viewId, tabId]) => {
@@ -3552,7 +3568,8 @@
   const logBulkUploadBtn = document.getElementById('logBulkUploadBtn');
   const logBulkFileInput = document.getElementById('logBulkFileInput');
   const logBulkEmployeeSelect = document.getElementById('logBulkEmployeeSelect');
-  let uploadedSheetRows = null; // { header: [...], rows: [[name, ...cells], ...] }
+  const UPLOAD_LABEL = '📎 Upload Attendance Excel(s) (.xlsx)';
+  let uploadedSheets = []; // one { header, rows: [[name, ...cells], ...] } per attendance sheet, across all uploaded files
   let uploadedEmployeeName = ''; // the name on the selected sheet row, saved when you import
   let uploadedHolidays = []; // holidays spotted in the sheet, saved when you import
   let uploadedAbsences = []; // absent days spotted in your row, saved when you import
@@ -3567,12 +3584,12 @@
     logBulkOverlay.style.display = 'none';
     logBulkArea.value = '';
     logBulkFeedback.textContent = '';
-    logBulkUploadBtn.textContent = '📎 Upload Attendance Excel (.xlsx)';
+    logBulkUploadBtn.textContent = UPLOAD_LABEL;
     logBulkUploadBtn.classList.remove('loaded');
     logBulkEmployeeSelect.style.display = 'none';
     logBulkEmployeeSelect.innerHTML = '';
     logBulkFileInput.value = '';
-    uploadedSheetRows = null;
+    uploadedSheets = [];
     uploadedEmployeeName = '';
     uploadedHolidays = [];
     uploadedAbsences = [];
@@ -3583,16 +3600,23 @@
   logBulkOverlay.addEventListener('click', (e) => {
     if (e.target === logBulkOverlay) closeBulkModal();
   });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && logBulkOverlay.style.display === 'flex') closeBulkModal();
-  });
 
   // ---- Excel upload parsing ----
   logBulkUploadBtn.addEventListener('click', () => logBulkFileInput.click());
 
-  logBulkFileInput.addEventListener('change', () => {
-    const file = logBulkFileInput.files[0];
-    if (!file) return;
+  const readFileBuffer = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+  const nameKeyOf = v => String(v || '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+  // Any number of files at once (and any number of sheets inside each). Only sheets
+  // that have date columns and at least one person count as attendance sheets.
+  logBulkFileInput.addEventListener('change', async () => {
+    const files = [...logBulkFileInput.files];
+    if (!files.length) return;
 
     if (typeof XLSX === 'undefined') {
       logBulkFeedback.className = 'log-paste-feedback error';
@@ -3600,102 +3624,119 @@
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    const sheets = [];
+    const unreadable = [];
+    for (const file of files) {
       try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const grid = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
-
-        if (!grid.length || grid.length < 2) {
-          throw new Error('empty');
-        }
-
-        const header = grid[0];
-        const dataRows = grid.slice(1).filter(row => row[0] && String(row[0]).trim() !== '');
-
-        if (!dataRows.length) {
-          throw new Error('no-rows');
-        }
-
-        uploadedSheetRows = { header, rows: dataRows };
-
-        logBulkUploadBtn.textContent = `✅ ${file.name}`;
-        logBulkUploadBtn.classList.add('loaded');
-
-        if (dataRows.length > 1) {
-          logBulkEmployeeSelect.innerHTML = dataRows
-            .map((row, i) => `<option value="${i}">${String(row[0])}</option>`)
-            .join('');
-          logBulkEmployeeSelect.style.display = 'block';
-        } else {
-          logBulkEmployeeSelect.style.display = 'none';
-        }
-
-        loadEmployeeRowIntoTextarea(0);
+        const workbook = XLSX.read(new Uint8Array(await readFileBuffer(file)), { type: 'array' });
+        let usable = false;
+        workbook.SheetNames.forEach(sheetName => {
+          const grid = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false, defval: '' });
+          if (grid.length < 2) return;
+          const header = grid[0];
+          const rows = grid.slice(1).filter(row => row[0] && String(row[0]).trim() !== '');
+          const hasDates = header.slice(1).some(h => parseDateSegment(String(h || '').trim()));
+          if (!rows.length || !hasDates) return;
+          sheets.push({ header, rows });
+          usable = true;
+        });
+        if (!usable) unreadable.push(file.name);
       } catch (err) {
-        logBulkFeedback.className = 'log-paste-feedback error';
-        logBulkFeedback.textContent = '⚠️ Could not read that file. Make sure it\'s an attendance sheet with dates as columns.';
-        logBulkUploadBtn.textContent = '📎 Upload Attendance Excel (.xlsx)';
-        logBulkUploadBtn.classList.remove('loaded');
+        unreadable.push(file.name);
       }
-    };
-    reader.readAsArrayBuffer(file);
+    }
+
+    if (!sheets.length) {
+      uploadedSheets = [];
+      logBulkFeedback.className = 'log-paste-feedback error';
+      logBulkFeedback.textContent = '⚠️ Could not read ' + (files.length > 1 ? 'those files' : 'that file') + '. Make sure it\'s an attendance sheet with dates as columns.';
+      logBulkUploadBtn.textContent = UPLOAD_LABEL;
+      logBulkUploadBtn.classList.remove('loaded');
+      logBulkEmployeeSelect.style.display = 'none';
+      return;
+    }
+
+    uploadedSheets = sheets;
+    const okFiles = files.length - unreadable.length;
+    logBulkUploadBtn.textContent = files.length === 1 ? `✅ ${files[0].name}` : `✅ ${okFiles} file${okFiles === 1 ? '' : 's'} loaded`;
+    logBulkUploadBtn.classList.add('loaded');
+
+    // One list of people across every sheet; your saved name is picked when it's there
+    const people = new Map();
+    sheets.forEach(({ rows }) => rows.forEach(row => { const k = nameKeyOf(row[0]); if (!people.has(k)) people.set(k, String(row[0]).trim()); }));
+    logBulkEmployeeSelect.innerHTML = '';
+    people.forEach((label, key) => logBulkEmployeeSelect.appendChild(new Option(label, key)));
+    logBulkEmployeeSelect.style.display = people.size > 1 ? 'block' : 'none';
+    const saved = nameKeyOf(userName);
+    if (people.has(saved)) logBulkEmployeeSelect.value = saved;
+
+    loadEmployeeRowIntoTextarea(logBulkEmployeeSelect.value, unreadable);
   });
 
   logBulkEmployeeSelect.addEventListener('change', () => {
-    loadEmployeeRowIntoTextarea(parseInt(logBulkEmployeeSelect.value, 10));
+    loadEmployeeRowIntoTextarea(logBulkEmployeeSelect.value);
   });
 
-  function loadEmployeeRowIntoTextarea(rowIndex) {
-    if (!uploadedSheetRows) return;
-    const { header, rows } = uploadedSheetRows;
-    const row = rows[rowIndex];
+  function loadEmployeeRowIntoTextarea(nameKey, unreadable) {
+    if (!uploadedSheets.length) return;
     const targetHoursVal = Math.floor(getTargetHours()) || 8;
 
-    const lines = [];
-    let skippedDays = 0;
+    const byDate = new Map(); // a date that appears in more than one sheet is only imported once
+    const holidaysFound = new Set(), absencesFound = new Set();
+    let skippedDays = 0, sheetsWithYou = 0, fullName = '';
 
-    for (let col = 1; col < header.length; col++) {
-      const headerLabel = String(header[col] || '').trim();
-      if (/^total$/i.test(headerLabel)) continue;
+    uploadedSheets.forEach(({ header, rows }) => {
+      const row = rows.find(r => nameKeyOf(r[0]) === nameKey);
+      if (!row) return;
+      sheetsWithYou++;
+      fullName = fullName || String(row[0]).trim();
 
-      const cellRaw = row[col];
-      const cell = (cellRaw === undefined || cellRaw === null) ? '' : String(cellRaw).trim();
-      if (!cell || /^nan$/i.test(cell)) continue;
+      for (let col = 1; col < header.length; col++) {
+        const headerLabel = String(header[col] || '').trim();
+        if (/^total$/i.test(headerLabel)) continue;
 
-      const timeMatch = cell.match(/^(\d{1,2}):(\d{2})/);
-      if (!timeMatch) {
-        skippedDays++;
-        continue;
+        const cellRaw = row[col];
+        const cell = (cellRaw === undefined || cellRaw === null) ? '' : String(cellRaw).trim();
+        if (!cell || /^nan$/i.test(cell)) continue;
+
+        const timeMatch = cell.match(/^(\d{1,2}):(\d{2})/);
+        if (!timeMatch) {
+          skippedDays++;
+          continue;
+        }
+
+        const hh = parseInt(timeMatch[1], 10);
+        const mm = parseInt(timeMatch[2], 10);
+        byDate.set(parseDateSegment(headerLabel) || headerLabel, `${hh}h ${mm}m 0s, ${targetHoursVal}, ${headerLabel}`);
       }
+      detectSheetHolidays(header, rows, row).forEach(d => holidaysFound.add(d));
+      detectSheetAbsences(header, row).forEach(d => absencesFound.add(d));
+    });
 
-      const hh = parseInt(timeMatch[1], 10);
-      const mm = parseInt(timeMatch[2], 10);
-      lines.push(`${hh}h ${mm}m 0s, ${targetHoursVal}, ${headerLabel}`);
-    }
-
+    const lines = [...byDate.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, line]) => line);
     logBulkArea.value = lines.join('\n');
     logBulkFeedback.className = 'log-paste-feedback success';
 
-    const fullName = String(row[0] || '').trim();
     uploadedEmployeeName = fullName;
-    uploadedHolidays = detectSheetHolidays(header, rows, row);
-    uploadedAbsences = detectSheetAbsences(header, row);
+    uploadedHolidays = [...holidaysFound].sort();
+    uploadedAbsences = [...absencesFound].sort();
     const firstName = fullName.split(/\s+/)[0] || '';
     const greeting = firstName ? `Hey ${firstName}! ` : '';
+    const sheetNote = uploadedSheets.length > 1 ? ` across ${uploadedSheets.length} sheets` : '';
     const skippedNote = skippedDays ? ` (skipped ${skippedDays} holiday/absent/blank day${skippedDays === 1 ? '' : 's'}, no worries, those don't count)` : '';
 
     const holidayNote = uploadedHolidays.length
-      ? ` Also spotted ${uploadedHolidays.length} holiday${uploadedHolidays.length === 1 ? '' : 's'} (${uploadedHolidays.map(d => fmtDay(d)).join(', ')}), which will be added to My Month.`
+      ? ` Also spotted ${uploadedHolidays.length} holiday${uploadedHolidays.length === 1 ? '' : 's'} (${uploadedHolidays.map(d => fmtDay(d)).join(', ')}), which will be added to Overview.`
       : '';
 
     const absenceNote = uploadedAbsences.length
       ? ` ${uploadedAbsences.length} absent day${uploadedAbsences.length === 1 ? '' : 's'} (${uploadedAbsences.map(d => fmtDay(d)).join(', ')}) will be added too.`
       : '';
 
-    logBulkFeedback.textContent = `${greeting}found ${lines.length} working day${lines.length === 1 ? '' : 's'} for you${skippedNote}.${holidayNote}${absenceNote} Take a quick look above, then hit Import when you're ready.`;
+    const missingNote = sheetsWithYou < uploadedSheets.length ? ` You're not in ${uploadedSheets.length - sheetsWithYou} of the sheets.` : '';
+    const unreadableNote = unreadable && unreadable.length ? ` Couldn't read: ${unreadable.join(', ')}.` : '';
+
+    logBulkFeedback.textContent = `${greeting}found ${lines.length} working day${lines.length === 1 ? '' : 's'} for you${sheetNote}${skippedNote}.${holidayNote}${absenceNote}${missingNote}${unreadableNote} Take a quick look above, then hit Import when you're ready.`;
   }
 
   function parseDateSegment(seg) {
@@ -3788,15 +3829,14 @@
   let calendarYear = null;
   let calendarMonth = null;
 
-  // Re-draw table + calendar after the log changes. 'current' goes to this
-  // month (first load, clear all); 'latest' to the newest dated entry's month
-  // (bulk import).
-  // My Month shows the same month the Daily Log just landed on (null = current month)
+  // My Month shows the same month the Daily Log just landed on (null = current month).
   function followMonthInMyMonth(y, m) {
     const now = new Date();
     meMonthKey = y === now.getFullYear() && m === now.getMonth() ? null : `${y}-${pad(m + 1)}`;
   }
 
+  // Re-draws table + calendar after the log changes. 'current' goes to this month (first load, month
+  // rollover); 'latest' goes to the newest dated entry's month (bulk import).
   function refreshCalendar(mode) {
     if (mode === 'latest') { setCalendarToLatestEntryMonth(); followMonthInMyMonth(calendarYear, calendarMonth); }
     else if (mode === 'current' || calendarYear === null) {
@@ -3920,13 +3960,6 @@
 
 
 
-  // The old standalone "Time Remaining" card (a big digital countdown, a
-  // subtitle, and a separate progress bar) merged into the Live Clock card:
-  // the analog dial's progress ring is now the one progress indicator, and
-  // the clock's own status pill/info line (see updateClock()) carries the
-  // "time left" text that used to live here. This function still owns the
-  // Elapsed Time / Hours Worked stats and — unrelated to any of that — the
-  // Clock-Out Time card's "exceeded" (goal reached) styling.
   // Celebration bubbles on the Clock-Out Time card: the 8 starter bubbles are in
   // the markup; once the goal is passed, 2 more float up for every minute of
   // overtime (up to a cap, so it stays light on the GPU).
@@ -4194,13 +4227,8 @@
     }
   });
 
-  // At desktop widths .wrap is meant to fill exactly the space below the
-  // header so each .col can scroll its own overflow internally — the footer
-  // is now a permanent part of the Shift Details column's content, so
-  // without this its tail (and the footer with it) just gets clipped with
-  // no way to reach it. Relying on CSS grid/flex "auto" row sizing alone to
-  // shrink-to-fit here is inconsistent across browsers, so this measures
-  // the real available space and sets it directly.
+  // At desktop widths .wrap fills the space below the header so each column scrolls on its own;
+  // measured directly because CSS "auto" row sizing is inconsistent across browsers.
   function syncWrapHeight() {
     const wrap = document.querySelector('.wrap:not([hidden])');
     if (window.innerWidth <= 1100) {
@@ -4211,15 +4239,8 @@
     const available = window.innerHeight - wrap.getBoundingClientRect().top - bodyPaddingBottom;
     wrap.style.height = Math.max(200, available) + 'px';
   }
-  // Sticky card titles pile up as a column scrolls (see .card-title in the
-  // desktop media query) — each one's sticky offset is the combined height
-  // of the titles above it in the same column, measured directly since
-  // title heights can vary slightly (icons, buttons) and this needs to
-  // survive font swaps/resizes exactly like syncWrapHeight() does.
-  // Whole cards stack on each other as a column scrolls — each card sticks
-  // at an offset equal to the previous card's title height (so that title
-  // keeps peeking out above the one now covering the rest of it), with a
-  // rising z-index so later cards visually sit on top of earlier ones.
+  // Sticky card titles pile up as a column scrolls, and each card sticks at the previous card's title
+  // height with a rising z-index so it covers the rest of the card above. Measured because title heights vary.
   function syncStackedCards() {
     const cards = document.querySelectorAll('.wrap > .col > .card');
     if (window.innerWidth <= 1100) {
@@ -4274,13 +4295,35 @@
     renderMyMonth();
   });
   document.addEventListener('click', e => { if (!e.target.closest('#meMonthPicker')) setMonthMenuOpen(false); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') setMonthMenuOpen(false); });
+
+  // ---- reset all data ----
+  const resetOverlay = document.getElementById('resetOverlay');
+  const closeResetModal = () => { resetOverlay.style.display = 'none'; };
+  document.getElementById('meResetBtn').addEventListener('click', () => { resetOverlay.style.display = 'flex'; document.getElementById('resetCancelBtn').focus(); });
+  document.getElementById('resetCloseBtn').addEventListener('click', closeResetModal);
+  document.getElementById('resetCancelBtn').addEventListener('click', closeResetModal);
+  resetOverlay.addEventListener('click', e => { if (e.target === resetOverlay) closeResetModal(); });
+  document.getElementById('resetConfirmBtn').addEventListener('click', () => {
+    resettingData = true;
+    try {
+      // everything the app stores, except the light/dark preference
+      Object.keys(localStorage).filter(k => k.startsWith('cmo') && k !== 'cmoTheme').forEach(k => localStorage.removeItem(k));
+    } catch (e) { /* storage unavailable */ }
+    location.reload();
+  });
 
   document.getElementById('meHolidayEdit').addEventListener('click', openHolidayModal);
   document.getElementById('holidayCloseBtn').addEventListener('click', closeHolidayModal);
   document.getElementById('holidayDoneBtn').addEventListener('click', closeHolidayModal);
   document.getElementById('holidayOverlay').addEventListener('click', e => { if (e.target.id === 'holidayOverlay') closeHolidayModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('holidayOverlay').style.display === 'flex') closeHolidayModal(); });
+  // One Escape handler closes whichever popup is open
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    setMonthMenuOpen(false);
+    if (resetOverlay.style.display === 'flex') closeResetModal();
+    if (document.getElementById('holidayOverlay').style.display === 'flex') closeHolidayModal();
+    if (logBulkOverlay.style.display === 'flex') closeBulkModal();
+  });
   document.getElementById('holidayAddBtn').addEventListener('click', addHolidayFromInput);
   document.getElementById('holidayDateInput').addEventListener('keydown', e => { if (e.key === 'Enter') addHolidayFromInput(); });
   document.getElementById('holidayList').addEventListener('click', e => {
@@ -4302,7 +4345,7 @@
     renderHolidayModal();
     renderMyMonth();
   });
-  setUserName(userName);
+  setUserName(userName, false); // just paint the saved name; nothing to write yet
   // Chip: behind -> fill Running Late Balance, ahead -> plan an early departure
   // (the same actions as the Daily Log sync buttons); on target -> open the log.
   document.getElementById('logChip').addEventListener('click', () => {
