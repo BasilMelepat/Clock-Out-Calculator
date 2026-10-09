@@ -1223,6 +1223,10 @@
   .clock-pill.working { color: #fff; background: var(--sky); border-color: transparent; }
   .clock-pill.onbreak { color: #fff; background: #B08968; border-color: transparent; }
   .clock-pill.done { color: #fff; background: var(--good); border-color: transparent; }
+  .clock-pills { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; }
+  .clock-pill.backlog { color: #8A5300; background: #FFF1DC; border-color: #F5C77E; }
+  .clock-pill.backlog[hidden] { display: none; }
+  body.dark-mode .clock-pill.backlog { color: #FFD08A; background: rgba(245, 166, 35, 0.18); border-color: rgba(245, 166, 35, 0.45); }
   .clock-info { font-size: clamp(20px, 2.4vw, 28px); font-weight: 800; line-height: 1.2; text-align: center; color: var(--deep); letter-spacing: 0.3px; font-variant-numeric: tabular-nums; }
   .clock-info.rolling { white-space: nowrap; }
   .clock-legend {
@@ -1678,7 +1682,7 @@
     <span class="brand-mark" id="brandMark" aria-hidden="true">🖥️</span>
     <span class="brand-text">
       <span class="app-header-title" id="brandTitle" role="link" tabindex="0" title="Go to Shift Details">Clock me Out</span>
-      <span class="brand-meta"><span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.256</span><span class="user-chip" id="userChip" hidden></span></span>
+      <span class="brand-meta"><span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.260</span><span class="user-chip" id="userChip" hidden></span></span>
     </span>
   </div>
   <div class="view-bar" id="viewBar" data-view="overview">
@@ -1768,7 +1772,10 @@
         </svg>
       </div>
       <div class="clock-status">
-        <span class="clock-pill" id="clockPill">Set clock-in time</span>
+        <div class="clock-pills">
+          <span class="clock-pill" id="clockPill">Set clock-in time</span>
+          <span class="clock-pill backlog" id="clockBacklogPill" hidden title="Backlog added to today's target"></span>
+        </div>
         <span class="clock-info" id="clockInfo">Add clock-in to start</span>
       </div>
       <div class="clock-legend">
@@ -2531,7 +2538,7 @@
     if (!clockIn) {
       shiftAnchor = startOfDay(new Date()); // no shift yet: the next one starts today
       showResultCard(false);
-      setWelcomeLine('Add your shift details to begin the day.');
+      renderWelcomeLine(new Date());
       renderFlipTime(timeEl, '--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
       errorEl.textContent = '👇 Please enter your clock-in time';
       renderFlipTime(workOut, '--');
@@ -2566,7 +2573,6 @@
 
     renderFlipTime(timeEl, minutesToTimeStr(clockOutMin), { charClass: 'roll-char', animClass: 'roll-anim' });
     errorEl.textContent = `🕘 Clocked in at ${minutesToTimeStr(clockInMin)}`;
-    setWelcomeLine(`Clocked in at ${minutesToTimeStr(clockInMin)}. Clock-out at ${minutesToTimeStr(clockOutMin)}.`);
     renderFlipTime(workOut, formatDuration(targetWorkMin));
     renderFlipTime(breakOut, totalBreakMin > 0 ? formatDuration(totalBreakMin) : 'Not taken');
 
@@ -2588,6 +2594,7 @@
 
     state.clockInDate = clockInDate;
     state.clockOutDate = clockOutDate;
+    renderWelcomeLine(new Date()); // keep the welcome sub-line live without waiting for the next tick
     state.totalBreakMin = totalBreakMin;
     state.targetWorkMin = targetWorkMin;
 
@@ -2646,11 +2653,106 @@
     evening: [['Final stretch', '🏁'], ['Golden hour', '🌇'], ['Finish strong', '💪'], ['Almost there', '🎉']],
     night:   [['Night owl mode', '🦉'], ['Burning the midnight oil', '🌙'], ['Still going strong', '🌠'], ['Moonlight shift', '🌃']],
     friday:  [['Friday energy', '🎉'], ['Almost the weekend', '🥳'], ['Weekend loading', '🕺']],
-    weekend: [['Weekend warrior', '🛡️'], ['Bonus round', '🎮'], ['Dedicated, aren\'t you', '🫡']]
+    weekend: [['Weekend warrior', '🛡️'], ['Bonus round', '🎮'], ['Dedicated, aren\'t you', '🫡']],
+    // Shift-progress lines: these take over from the time-of-day lines as the clock-out time gets close (or passes)
+    near60:  [['Home stretch', '🏁'], ['Last hour, let\'s go', '⏱️'], ['One hour to freedom', '🕊️']],
+    near30:  [['Almost there', '🎉'], ['Smell that freedom', '👃'], ['Bags half packed', '🎒']],
+    near10:  [['Final countdown', '⏳'], ['Wrap it up', '🎬'], ['Shutting down soon', '💻']],
+    done:    [['Target smashed', '🏆'], ['Mission complete', '🎯'], ['Clocked out in spirit', '🫡']],
+    over30:  [['Overtime hero', '🦸'], ['Bonus minutes', '🎁'], ['Go home, legend', '🏠']],
+    over120: [['Seriously, go home', '🫠'], ['Absolute workhorse', '🐴'], ['Touch grass, champion', '🌱']],
+    payback: [['Backlog buster', '💪'], ['Paying it back', '🏦'], ['Clearing the slate', '🧹']]
   };
+
+  // Backlog from this month's Daily Log that today's target does NOT already include (the Running Late card is already
+  // part of the clock-out time), minus whatever has been worked past the target so far. Only meaningful once the target is reached.
+  function backlogLeftPastTarget(minsPast) {
+    const owed = Math.max(0, -getLogDiffSeconds() / 60) - Math.max(0, parseFloat(el.lateMinutes.value) || 0);
+    return { owed, left: owed - Math.max(0, minsPast) };
+  }
+
+  // Minutes until the clock-out time (negative once past it), or null when there is no running shift
+  function minutesToClockOut(now) {
+    if (!document.getElementById('clockIn').value || !state.clockOutDate) return null;
+    return (state.clockOutDate.getTime() - now.getTime()) / 60000;
+  }
+  function targetPhase(now) {
+    const m = minutesToClockOut(now);
+    if (m === null || m > 60) return null;
+    if (m > 30) return 'near60';
+    if (m > 10) return 'near30';
+    if (m > 0) return 'near10';
+    if (m > -30) return 'done';
+    if (backlogLeftPastTarget(-m).left > 1) return 'payback'; // backlog still to cover: don't tell them to go home yet
+    if (m > -120) return 'over30';
+    return 'over120';
+  }
+  const fmtSpan = mins => { const t = Math.max(1, Math.round(mins)), h = Math.floor(t / 60), r = t % 60; return h ? (r ? `${h}h ${r}m` : `${h}h`) : `${t} min`; };
+  // Under an hour to go, or past the target: the sub-line becomes a live countdown instead of the static clock-in / clock-out text
+  // The welcome sub-line is the app's guide: it explains where the day stands and what to do next
+  // (backlog added / add backlog / early departure possible), and counts down in the last hour.
+  function renderWelcomeLine(now) {
+    const timeStr = d => minutesToTimeStr(d.getHours() * 60 + d.getMinutes());
+    const diffMin = getLogDiffSeconds() / 60;                       // this month's Daily Log balance (+ ahead, - behind)
+    const behind = Math.max(0, -diffMin), ahead = Math.max(0, diffMin);
+    const late = Math.round(Math.max(0, parseFloat(el.lateMinutes.value) || 0)); // Running Late minutes already in today's target
+    const pending = behind - late;                                   // behind-balance not added to today yet
+
+    // No shift yet
+    if (!document.getElementById('clockIn').value || !state.clockInDate || !state.clockOutDate) {
+      const base = 'Add your shift details to begin the day.';
+      setWelcomeLine(behind > 0.5 ? `${base} You're ${fmtSpan(behind)} behind this month, add it as backlog to catch up.`
+        : ahead > 0.5 ? `${base} You're ${fmtSpan(ahead)} ahead this month, an early departure is on the table.` : base);
+      return;
+    }
+
+    const m = minutesToClockOut(now), co = state.clockOutDate, outStr = timeStr(co);
+
+    // Target reached
+    if (m <= 0) {
+      const head = m > -1 ? 'Target reached.' : `${fmtSpan(-m)} past target.`;
+      const { owed, left } = backlogLeftPastTarget(-m);
+      if (owed > 1) {
+        setWelcomeLine(left > 1
+          ? `${head} ${fmtSpan(left)} of backlog still to cover, ${m > -1 ? 'stay a little longer?' : 'keep going!'}`
+          : `${head} Backlog covered! Clock out whenever you like.`);
+      } else if (late >= 1) {
+        setWelcomeLine(`${head} Your ${fmtSpan(late)} backlog is cleared, clock out whenever you like.`);
+      } else if (ahead > 0.5) {
+        setWelcomeLine(`${head} You're ${fmtSpan(ahead)} ahead this month, no need to stay longer.`);
+      } else {
+        setWelcomeLine(`${head} Clock-out was ${outStr}.`);
+      }
+      return;
+    }
+
+    // Shift running
+    const inStr = timeStr(state.clockInDate);
+    let line = m <= 60 ? `${fmtSpan(m)} to go.` : `Clocked in at ${inStr}.`;
+    line += late >= 1 ? ` Clock-out at ${outStr}, with ${fmtSpan(late)} backlog added.` : ` Clock-out at ${outStr}.`;
+    if (late >= 1) {
+      if (pending > 0.5) line += ` ${fmtSpan(pending)} more is not added yet, use the Log chip to add it.`;
+    } else if (behind > 0.5) {
+      line += ` You're ${fmtSpan(behind)} behind this month, add it as backlog to catch up.`;
+    } else if (ahead > 0.5) {
+      if (state.earlyDepartureDate) {
+        line += ` Early departure planned for ${timeStr(state.earlyDepartureDate)}.`;
+      } else {
+        const early = new Date(co.getTime() - ahead * 60000);
+        line += early <= now ? ` You're ${fmtSpan(ahead)} ahead, you can leave any time.`
+          : ` You're ${fmtSpan(ahead)} ahead, you could leave as early as ${timeStr(early)}.`;
+      }
+    }
+    setWelcomeLine(line);
+  }
   let greetingPick = { slot: '', line: null };
   function greetingFor(now) {
     const h = now.getHours(), day = now.getDay();
+    const phase = targetPhase(now);
+    if (phase) {
+      if (greetingPick.slot !== phase) { const l = GREETINGS[phase]; greetingPick = { slot: phase, line: l[Math.floor(Math.random() * l.length)] }; }
+      return greetingPick.line;
+    }
     let slot = h >= 4 && h < 8 ? 'dawn' : h >= 8 && h < 12 ? 'morning' : h >= 12 && h < 14 ? 'lunch' : h >= 14 && h < 17 ? 'midday' : h >= 17 && h < 21 ? 'evening' : 'night';
     // Lunch (12-14) wins on every day; weekend / Friday lines only override the other slots
     if (slot !== 'lunch') {
@@ -2666,7 +2768,9 @@
 
   // Phrase on the first line and "Name 🚀" on the second (desktop; phones let it flow inline)
   function renderWelcomeGreeting() {
-    const [word, emoji] = greetingFor(new Date());
+    const nowD = new Date();
+    renderWelcomeLine(nowD);
+    const [word, emoji] = greetingFor(nowD);
     const key = word + '|' + userName;
     const elG = document.getElementById('welcomeGreeting');
     if (elG.dataset.key === key) return;
@@ -2832,6 +2936,7 @@
     minute: document.getElementById('clockMinute'),
     second: document.getElementById('clockSecond'),
     pill: document.getElementById('clockPill'),
+    backlogPill: document.getElementById('clockBacklogPill'),
     info: document.getElementById('clockInfo'),
     digital: document.getElementById('clockDigital')
   };
@@ -3017,6 +3122,11 @@
     if (svg.getAttribute('class') !== cls) svg.setAttribute('class', cls);
     if (clockEls.pill.className !== pillClass) clockEls.pill.className = pillClass;
     setTextIfChanged(clockEls.pill, pillText);
+    // Second pill beside the status pill while a Running Late balance is part of today's target
+    const lateMin = inD && outD ? Math.round(parseFloat(el.lateMinutes.value) || 0) : 0;
+    const showBacklog = lateMin >= 1;
+    if (clockEls.backlogPill.hidden === showBacklog) clockEls.backlogPill.hidden = !showBacklog;
+    if (showBacklog) setTextIfChanged(clockEls.backlogPill, `⏱️ +${formatDuration(lateMin)} backlog added`);
     if (rollInfo) {
       // Live countdown: each changed digit rolls in (same roll as the Clock-Out Time card)
       renderFlipTime(clockEls.info, infoText, { charClass: 'roll-char', animClass: 'roll-anim' });
