@@ -1572,6 +1572,24 @@
   .settings-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .settings-block .me-hint { margin-top: 8px; }
 
+  /* Settings: a slim row in Overview that expands in place (collapsed by default) */
+  .settings-card { padding: 0; }
+  .settings-open { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 18px; border: none; border-radius: inherit; background: transparent; color: var(--deep); font: inherit; text-align: left; cursor: pointer; }
+  .settings-open:hover { background: var(--sky-light); }
+  .settings-open:focus-visible { outline: 2px solid var(--sky); outline-offset: -2px; }
+  .settings-open-main { font-size: 14px; font-weight: 800; white-space: nowrap; }
+  .settings-open-sub { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .settings-open .set-chev { flex: none; color: var(--muted); font-size: 22px; line-height: 1; }
+  .settings-open .set-chev { transition: transform 0.2s ease; }
+  .settings-open[aria-expanded="true"] .set-chev { transform: rotate(90deg); }
+  .settings-open[aria-expanded="true"] { border-bottom: 1px solid var(--line); border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .settings-body { padding: 4px 18px 18px; }
+  .settings-body[hidden] { display: none; }
+  .settings-body > .settings-block:first-child { padding-top: 10px; margin-top: 0; border-top: none; }
+  @media (prefers-reduced-motion: reduce) { .settings-open .set-chev { transition: none; } }
+  /* Backup / restore needs a file picker and downloads, so it is hidden on phones and touch devices */
+  @media (max-width: 780px), (hover: none) and (pointer: coarse) { .settings-backup { display: none; } }
+
   /* Shift Details in its default (empty) look gets a colour pop so the first step is obvious */
   .card.shift-attention { background: linear-gradient(135deg, #DCEEFF 0%, var(--card) 72%); box-shadow: 0 0 0 1.5px var(--sky), 0 12px 30px rgba(79, 168, 232, 0.28); }
   body.dark-mode .card.shift-attention { background: linear-gradient(135deg, #1B3B5E 0%, var(--card) 75%); box-shadow: 0 0 0 1.5px var(--sky), 0 12px 30px rgba(79, 168, 232, 0.22); }
@@ -1636,6 +1654,22 @@
   @media (min-width: 781px) {
     .app-header { position: static; z-index: auto; backdrop-filter: none; -webkit-backdrop-filter: none; }
   }
+
+  /* Phones: the header bar runs edge to edge (past the page's side padding) and stays pinned at the top */
+  @media (max-width: 780px) {
+    body { padding-top: 0; }
+    .app-header {
+      box-sizing: border-box;
+      width: calc(100% + 24px);
+      max-width: none;
+      margin: 0 -12px 16px;
+      padding: 10px 12px 0;
+      background: rgba(255, 255, 255, 0.78);
+      border-bottom: 1px solid var(--line);
+    }
+    body.dark-mode .app-header { background: rgba(11, 22, 34, 0.78); }
+    .app-header .view-tabs { box-shadow: none; }
+  }
 </style>
 </head>
 <body>
@@ -1644,7 +1678,7 @@
     <span class="brand-mark" id="brandMark" aria-hidden="true">🖥️</span>
     <span class="brand-text">
       <span class="app-header-title" id="brandTitle" role="link" tabindex="0" title="Go to Shift Details">Clock me Out</span>
-      <span class="brand-meta"><span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.245</span><span class="user-chip" id="userChip" hidden></span></span>
+      <span class="brand-meta"><span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.256</span><span class="user-chip" id="userChip" hidden></span></span>
     </span>
   </div>
   <div class="view-bar" id="viewBar" data-view="overview">
@@ -1913,8 +1947,13 @@
 
 <div class="wrap wrap-me" id="viewMe" hidden>
   <div class="col">
-    <div class="card" id="settingsCard">
-      <div class="card-title"><span>⚙️ Settings</span></div>
+    <div class="card settings-card" id="settingsCard">
+      <button class="settings-open" id="settingsToggle" type="button" aria-expanded="false" aria-controls="settingsBody">
+        <span class="settings-open-main">⚙️ Settings</span>
+        <span class="settings-open-sub">Name, effects and data</span>
+        <span class="set-chev" aria-hidden="true">›</span>
+      </button>
+      <div class="settings-body" id="settingsBody" hidden>
       <div class="settings-block">
         <label for="meNameInput">Your name</label>
         <div class="settings-row">
@@ -1935,7 +1974,7 @@
         </div>
         <p class="me-hint">Mouse and trackpad only. Each effect can be switched on or off on its own.</p>
       </div>
-      <div class="settings-block">
+      <div class="settings-block settings-backup">
         <label>Backup</label>
         <div class="settings-row">
           <button class="me-link-btn" id="backupDownloadBtn" type="button">⬇️ Download backup</button>
@@ -1947,8 +1986,9 @@
       <div class="settings-block">
         <label>Reset</label>
         <div class="settings-row">
-          <button class="me-danger-btn" id="meResetBtn" type="button">🗑️ Reset all data</button>
+          <button class="me-danger-btn" id="meResetBtn" type="button">🚽 Flush Everything</button>
         </div>
+      </div>
       </div>
     </div>
 
@@ -2014,7 +2054,7 @@
 <div class="modal-overlay" id="resetOverlay" style="display:none;">
   <div class="modal-box">
     <div class="modal-header">
-      <span>⚠️ Reset all data?</span>
+      <span>🚽 Flush everything?</span>
       <button class="modal-close" id="resetCloseBtn" type="button" aria-label="Close">❌</button>
     </div>
     <div class="reset-body">
@@ -2029,7 +2069,7 @@
     </div>
     <div class="holiday-actions">
       <button class="log-io-btn" id="resetCancelBtn" type="button">Cancel</button>
-      <button class="modal-import-btn reset-confirm-btn" id="resetConfirmBtn" type="button">Reset everything</button>
+      <button class="modal-import-btn reset-confirm-btn" id="resetConfirmBtn" type="button">🚽 Flush it</button>
     </div>
   </div>
 </div>
@@ -2471,6 +2511,11 @@
     });
   }
 
+  // The calendar day the current shift started on. Normally today, but an overnight shift that is still running
+  // after midnight keeps its original day so the clock-out time and countdown stay correct.
+  function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  let shiftAnchor = startOfDay(new Date());
+
   function calculate() {
     const clockIn = el.clockIn.value;
     const targetHours = getTargetHours();
@@ -2484,6 +2529,7 @@
     const breakOut = el.breakHoursOut;
 
     if (!clockIn) {
+      shiftAnchor = startOfDay(new Date()); // no shift yet: the next one starts today
       showResultCard(false);
       setWelcomeLine('Add your shift details to begin the day.');
       renderFlipTime(timeEl, '--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
@@ -2513,7 +2559,7 @@
 
     // Build real Date objects anchored to today for the live countdown
     const now = new Date();
-    const clockInDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const clockInDate = new Date(shiftAnchor.getFullYear(), shiftAnchor.getMonth(), shiftAnchor.getDate(), 0, 0, 0);
     clockInDate.setMinutes(clockInMin);
     const clockOutDate = new Date(clockInDate.getTime());
     clockOutDate.setMinutes(clockOutDate.getMinutes() + targetWorkMin + totalBreakMin);
@@ -2561,13 +2607,15 @@
           end: item.querySelector('.break-end').value
         });
       });
-      const state = {
+      const snapshot = {
         clockIn: document.getElementById('clockIn').value,
         targetHours: document.getElementById('targetHours').value,
         breaks: breaks,
-        savedAt: Date.now()
+        savedAt: Date.now(),
+        anchor: shiftAnchor.getTime(),
+        endsAt: (document.getElementById('clockIn').value && state.clockOutDate) ? state.clockOutDate.getTime() : null
       };
-      localStorage.setItem('cmoShiftState', JSON.stringify(state));
+      localStorage.setItem('cmoShiftState', JSON.stringify(snapshot));
     } catch (e) { /* storage unavailable, fail silently */ }
   }
 
@@ -2588,15 +2636,37 @@
     if (show && wasHidden) { card.classList.remove('reveal'); void card.offsetWidth; card.classList.add('reveal'); }
   }
 
-  // Welcome card: greeting follows the time of day, plus the name when we have one
-  function greetingWord() {
-    const h = new Date().getHours();
-    return h >= 4 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 21 ? 'Good evening' : 'Good night';
+  // Welcome card: a punchy greeting that follows the time of day (and the day of the week), plus the name when we have one.
+  // One line is picked at random per time slot and kept until the slot changes, so it never flickers.
+  const GREETINGS = {
+    dawn:    [['Rise and shine', '🌅'], ['Early bird mode', '🐦'], ['Fresh start', '🌱'], ['Up before the sun', '☀️']],
+    morning: [['Let\'s get it', '🚀'], ['Look who\'s here', '😎'], ['Cape on', '🦸']],
+    lunch:   [['Lunch break unlocked', '🔓'], ['Feed the engine', '🍔'], ['Halftime, champ', '🏆'], ['Fork in hand', '🍴'], ['Stomach says hi', '👋']],
+    midday:  [['Power hour', '⚡'], ['In the zone', '🎯'], ['Keep the momentum', '🔥'], ['Cruising along', '😎']],
+    evening: [['Final stretch', '🏁'], ['Golden hour', '🌇'], ['Finish strong', '💪'], ['Almost there', '🎉']],
+    night:   [['Night owl mode', '🦉'], ['Burning the midnight oil', '🌙'], ['Still going strong', '🌠'], ['Moonlight shift', '🌃']],
+    friday:  [['Friday energy', '🎉'], ['Almost the weekend', '🥳'], ['Weekend loading', '🕺']],
+    weekend: [['Weekend warrior', '🛡️'], ['Bonus round', '🎮'], ['Dedicated, aren\'t you', '🫡']]
+  };
+  let greetingPick = { slot: '', line: null };
+  function greetingFor(now) {
+    const h = now.getHours(), day = now.getDay();
+    let slot = h >= 4 && h < 8 ? 'dawn' : h >= 8 && h < 12 ? 'morning' : h >= 12 && h < 14 ? 'lunch' : h >= 14 && h < 17 ? 'midday' : h >= 17 && h < 21 ? 'evening' : 'night';
+    // Lunch (12-14) wins on every day; weekend / Friday lines only override the other slots
+    if (slot !== 'lunch') {
+      if ((day === 0 || day === 6) && slot !== 'night') slot = 'weekend';
+      else if (day === 5 && (slot === 'midday' || slot === 'evening')) slot = 'friday';
+    }
+    if (greetingPick.slot !== slot) {
+      const list = GREETINGS[slot];
+      greetingPick = { slot, line: list[Math.floor(Math.random() * list.length)] };
+    }
+    return greetingPick.line;
   }
 
-  // "Good afternoon," on the first line and "Name 👋" on the second (desktop; phones let it flow inline)
+  // Phrase on the first line and "Name 🚀" on the second (desktop; phones let it flow inline)
   function renderWelcomeGreeting() {
-    const word = greetingWord();
+    const [word, emoji] = greetingFor(new Date());
     const key = word + '|' + userName;
     const elG = document.getElementById('welcomeGreeting');
     if (elG.dataset.key === key) return;
@@ -2607,10 +2677,10 @@
       first.textContent = word + ', ';
       const name = document.createElement('span');
       name.className = 'greeting-name';
-      name.textContent = userName + ' 👋';
+      name.textContent = userName + ' ' + emoji;
       elG.append(first, name);
     } else {
-      elG.textContent = word + ' 👋';
+      elG.textContent = word + ' ' + emoji;
     }
   }
 
@@ -2625,10 +2695,14 @@
       if (!saved) return;
       const state = JSON.parse(saved);
       if (!state || typeof state.savedAt !== 'number') return;
-      if (localDateKey(new Date(state.savedAt)) !== localDateKey(new Date())) {
+      const savedToday = localDateKey(new Date(state.savedAt)) === localDateKey(new Date());
+      // A shift saved on an earlier day is dropped, unless it is an overnight shift that has not reached its clock-out yet
+      const stillRunning = typeof state.endsAt === 'number' && state.endsAt > Date.now();
+      if (!savedToday && !stillRunning) {
         localStorage.removeItem('cmoShiftState');
         return;
       }
+      shiftAnchor = startOfDay(new Date(typeof state.anchor === 'number' ? state.anchor : state.savedAt));
       if (state.clockIn) { document.getElementById('clockIn').value = state.clockIn; setShiftOpen(true); }
       if (state.targetHours) { document.getElementById('targetHours').value = state.targetHours; capTargetHours(); normalizeTargetHours(); }
       if (Array.isArray(state.breaks)) {
@@ -2668,6 +2742,7 @@
 
   // Puts today's clock-in and breaks into Shift Details (replacing what was there)
   function applyTodayShift(t) {
+    shiftAnchor = startOfDay(new Date());
     setShiftOpen(true);
     document.getElementById('clockIn').value = t.clockIn;
     breaksContainer.innerHTML = '';
@@ -2708,21 +2783,26 @@
     targetHoursInput.dispatchEvent(new Event('input', { bubbles: true }));
   });
 
-  document.getElementById('clockIn').addEventListener('input', () => { calculate(); saveShiftState(); });
+  document.getElementById('clockIn').addEventListener('input', () => {
+    // Typing a new clock-in after the previous (overnight) shift is over starts a fresh shift today
+    if (state.clockOutDate && state.clockOutDate <= new Date() && localDateKey(shiftAnchor) !== localDateKey(new Date())) shiftAnchor = startOfDay(new Date());
+    calculate();
+    saveShiftState();
+  });
 
   document.getElementById('targetHours').addEventListener('input', () => { calculate(); saveShiftState(); });
 
   document.getElementById('addShiftBtn').addEventListener('click', () => {
     setShiftOpen(true);
     const clockInInput = document.getElementById('clockIn');
-    if (!clockInInput.value) clockInInput.value = '09:30'; // default clock-in time
+    if (!clockInInput.value) { shiftAnchor = startOfDay(new Date()); const n = new Date(); clockInInput.value = minutesToInputTime(n.getHours() * 60 + n.getMinutes()); } // default clock-in = right now
     calculate();
     saveShiftStateNow();
     clockInInput.focus();
   });
 
   // ❌ clears today's clock-in and breaks, folds the card back and hides the Clock-Out Time card (target hours stay)
-  document.getElementById('closeShiftBtn').addEventListener('click', () => {
+  function clearShiftToday() {
     document.getElementById('clockIn').value = '';
     breaksContainer.innerHTML = '';
     breakCount = 0;
@@ -2730,7 +2810,8 @@
     setShiftOpen(false);
     calculate();
     saveShiftStateNow();
-  });
+  }
+  document.getElementById('closeShiftBtn').addEventListener('click', clearShiftToday);
 
   // ========================================================================
   // 3. LIVE CLOCK & LAYOUT
@@ -3002,7 +3083,18 @@
     renderFlipTime(totalHoursOut, `${pad(workedH)}:${pad(workedM)}:${pad(workedS)}`);
   }
 
+  // Midnight rollover: the shift is cleared when a new day begins, unless an overnight shift is still running
+  // (its clock-out time hasn't passed yet). It is then cleared at the first midnight after it ends.
+  let lastDayKey = localDateKey(new Date());
+  function midnightRollover() {
+    if (!document.getElementById('clockIn').value) { shiftAnchor = startOfDay(new Date()); return; }
+    if (state.clockOutDate && state.clockOutDate > new Date()) return;
+    clearShiftToday();
+  }
+
   function tick() {
+    const dayNow = localDateKey(new Date());
+    if (dayNow !== lastDayKey) { lastDayKey = dayNow; midnightRollover(); }
     const monthNow = new Date().getMonth();
     if (monthNow !== logMonthSeen) { // a new month began while the app was open
       logMonthSeen = monthNow;
@@ -4673,6 +4765,14 @@
     reader.readAsText(file);
   });
 
+  // Settings expands and collapses in place
+  const settingsToggle = document.getElementById('settingsToggle'), settingsBody = document.getElementById('settingsBody');
+  settingsToggle.addEventListener('click', () => {
+    const open = settingsBody.hidden;
+    settingsBody.hidden = !open;
+    settingsToggle.setAttribute('aria-expanded', String(open));
+  });
+
   document.getElementById('meResetBtn').addEventListener('click', () => { resetOverlay.style.display = 'flex'; document.getElementById('resetCancelBtn').focus(); });
 
   document.getElementById('resetCloseBtn').addEventListener('click', closeResetModal);
@@ -4751,6 +4851,45 @@
   document.getElementById('tabLog').addEventListener('click', () => switchView('log'));
 
   document.getElementById('tabMe').addEventListener('click', () => switchView('me'));
+
+  // Swipe left / right to move between the three tabs (touch devices only).
+  // Ignored when: more than one finger, the gesture starts near the screen edge (browser back gesture),
+  // on form controls, inside anything that scrolls sideways (tables, calendar), or while a popup is open.
+  (function initSwipeTabs() {
+    const ORDER = ['overview', 'log', 'me'];
+    const MIN_DX = 60, MAX_MS = 700, EDGE = 24;
+    let t0 = null;
+    const scrollsSideways = el => {
+      for (; el && el !== document.body; el = el.parentElement) {
+        if (el.scrollWidth > el.clientWidth + 1) {
+          const ox = getComputedStyle(el).overflowX;
+          if (ox === 'auto' || ox === 'scroll') return true;
+        }
+      }
+      return false;
+    };
+    const popupOpen = () => Array.from(document.querySelectorAll('.modal-overlay')).some(o => o.style.display === 'flex');
+    document.addEventListener('touchstart', e => {
+      t0 = null;
+      if (e.touches.length !== 1 || popupOpen()) return;
+      const t = e.touches[0];
+      if (t.clientX < EDGE || t.clientX > window.innerWidth - EDGE) return;
+      if (e.target.closest && e.target.closest('input, select, textarea, [contenteditable="true"]')) return;
+      if (scrollsSideways(e.target)) return;
+      t0 = { x: t.clientX, y: t.clientY, time: Date.now() };
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+      if (!t0) return;
+      const t = e.changedTouches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y, dt = Date.now() - t0.time;
+      t0 = null;
+      if (dt > MAX_MS || Math.abs(dx) < MIN_DX || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+      const sel = window.getSelection && window.getSelection();
+      if (sel && String(sel).length) return; // user is selecting text
+      const next = ORDER.indexOf(currentView) + (dx < 0 ? 1 : -1);
+      if (next >= 0 && next < ORDER.length) switchView(ORDER[next]);
+    }, { passive: true });
+    document.addEventListener('touchcancel', () => { t0 = null; }, { passive: true });
+  })();
 
   // ========================================================================
   // 11. POINTER EFFECTS
