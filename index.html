@@ -910,14 +910,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
   .calendar-nav-btn {
     background: var(--sky-light);
     border: none;
-    border-radius: 8px;
-    width: 32px;
-    height: 32px;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
     font-size: 18px;
     font-weight: 800;
     color: var(--deep2);
@@ -925,26 +925,33 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background .15s ease, transform .15s ease;
   }
   .calendar-nav-btn:hover { background: var(--line); }
+  .calendar-nav-btn:active { transform: scale(0.92); }
   .calendar-month-label {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 800;
+    letter-spacing: 0.01em;
     color: var(--deep2);
   }
   .calendar-weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
     text-align: center;
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 6px;
+    opacity: 0.8;
+    margin-bottom: 8px;
   }
   .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    gap: 6px;
   }
   .calendar-cell {
     aspect-ratio: 1;
@@ -952,28 +959,53 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1px;
-    border-radius: 8px;
-    font-size: 11.5px;
+    gap: 2px;
+    border-radius: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--muted);
-    background: var(--surface);
-    border: 1px solid var(--line);
+    background: rgba(120, 160, 200, 0.08);
+    border: 1px solid transparent;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     cursor: pointer;
-    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), border-radius .3s ease, box-shadow .25s ease, background .2s ease;
+    -webkit-tap-highlight-color: transparent;
   }
-  .calendar-cell:not(.empty):hover {
-    transform: scale(1.08);
-    box-shadow: 0 3px 10px rgba(11,42,74,0.18);
-    background: var(--sky-light);
+  /* Hover: the tile morphs into a circle, lifts, and sends out one soft ring. Hover-capable devices only; touch gets a press effect. */
+  .calendar-cell:not(.empty)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
   }
-  .calendar-cell.has-entry.ahead:hover {
-    background: rgba(30, 142, 90, 0.24);
+  .calendar-cell:not(.empty) .cal-day-num { transition: transform .35s cubic-bezier(.34, 1.56, .64, 1); }
+  .calendar-cell:not(.empty):active { transform: scale(0.92); transition-duration: .1s; }
+  @keyframes calRing {
+    0%   { opacity: 0.9; box-shadow: 0 0 0 0 var(--cal-ring, rgba(79, 168, 232, 0.55)); }
+    100% { opacity: 0;   box-shadow: 0 0 0 11px var(--cal-ring, rgba(79, 168, 232, 0)); }
   }
-  .calendar-cell.has-entry.short:hover {
-    background: rgba(240, 196, 138, 0.3);
+  @media (hover: hover) {
+    .calendar-cell:not(.empty):hover {
+      z-index: 2;
+      border-radius: 50%;
+      transform: translateY(-3px) scale(1.1);
+      box-shadow: 0 10px 20px rgba(11, 42, 74, 0.16);
+      background: var(--sky-light);
+    }
+    .calendar-cell.has-entry.ahead:hover { --cal-ring: rgba(30, 142, 90, 0.5); background: rgba(30, 142, 90, 0.26); box-shadow: 0 10px 20px rgba(30, 142, 90, 0.3); }
+    .calendar-cell.has-entry.short:hover { --cal-ring: rgba(224, 160, 70, 0.55); background: rgba(240, 196, 138, 0.42); box-shadow: 0 10px 20px rgba(224, 160, 70, 0.34); }
+    .calendar-cell.today:not(.empty):hover { box-shadow: 0 0 0 2px var(--sky) inset, 0 10px 20px rgba(79, 168, 232, 0.38); }
+    .calendar-cell.today.live.live-done:hover { box-shadow: 0 0 0 2px var(--good) inset, 0 10px 20px rgba(30, 142, 90, 0.34); }
+    .calendar-cell:not(.empty):hover .cal-day-num { transform: scale(1.1); }
+    .calendar-cell:not(.empty):hover::after { animation: calRing .8s ease-out; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .calendar-cell, .calendar-cell .cal-day-num { transition: none; }
+    .calendar-cell:not(.empty):hover, .calendar-cell:not(.empty):active { transform: none; }
+    .calendar-cell:not(.empty):hover::after { animation: none; }
   }
   .calendar-cell.empty {
     background: transparent;
@@ -988,15 +1020,14 @@
     font-weight: 700;
     line-height: 1;
     white-space: nowrap;
+    opacity: 0.85;
   }
   .calendar-cell.has-entry.ahead {
-    background: rgba(30, 142, 90, 0.14);
-    border-color: var(--good);
+    background: rgba(30, 142, 90, 0.15);
     color: var(--good);
   }
   .calendar-cell.has-entry.short {
-    background: rgba(240, 196, 138, 0.18);
-    border-color: #F0C48A;
+    background: rgba(240, 196, 138, 0.28);
     color: #9A5A0F;
   }
   body.dark-mode .calendar-cell.has-entry.short {
@@ -1004,6 +1035,7 @@
   }
   .calendar-cell.today {
     box-shadow: 0 0 0 2px var(--sky) inset;
+    color: var(--deep);
   }
   /* Live shift progress on today's cell: fills left-to-right and overrides
      any logged-entry colour while the shift is active. */
@@ -1011,7 +1043,6 @@
   .calendar-cell.today.live:hover {
     --live-fill: rgba(79, 168, 232, 0.5);
     background: linear-gradient(to right, var(--live-fill) var(--live-pct, 0%), var(--sky-light) var(--live-pct, 0%));
-    border-color: var(--sky);
     color: var(--deep);
   }
   body.dark-mode .calendar-cell.today.live,
@@ -1019,22 +1050,22 @@
   .calendar-cell.today.live.live-done,
   .calendar-cell.today.live.live-done:hover {
     --live-fill: rgba(30, 142, 90, 0.4);
-    border-color: var(--good);
+    box-shadow: 0 0 0 2px var(--good) inset;
   }
   body.dark-mode .calendar-cell.today.live.live-done,
   body.dark-mode .calendar-cell.today.live.live-done:hover { --live-fill: rgba(62, 208, 138, 0.4); }
   .calendar-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 14px;
+    gap: 14px;
+    margin-top: 16px;
     font-size: 11px;
     color: var(--muted);
   }
   .calendar-legend span {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
   }
   .calendar-dot {
     width: 9px;
@@ -1044,7 +1075,11 @@
   }
   .calendar-dot.ahead { background: var(--good); }
   .calendar-dot.short { background: #F0C48A; }
-  .calendar-dot.none { background: var(--line); }
+  .calendar-dot.none { background: rgba(120, 160, 200, 0.35); }
+  @media (max-width: 480px) {
+    .calendar-grid, .calendar-weekdays { gap: 4px; }
+    .calendar-cell { border-radius: 11px; font-size: 11.5px; }
+  }
   .modal-upload-btn {
     width: 100%;
     padding: 11px;
@@ -1682,7 +1717,7 @@
     <span class="brand-mark" id="brandMark" aria-hidden="true">🖥️</span>
     <span class="brand-text">
       <span class="app-header-title" id="brandTitle" role="link" tabindex="0" title="Go to Shift Details">Clock me Out</span>
-      <span class="brand-meta"><span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.260</span><span class="user-chip" id="userChip" hidden></span></span>
+      <span class="brand-meta"><span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.266</span><span class="user-chip" id="userChip" hidden></span></span>
     </span>
   </div>
   <div class="view-bar" id="viewBar" data-view="overview">
@@ -1980,6 +2015,13 @@
           <div class="fx-switch-row sub"><span>3D card tilt</span><button class="fx-switch" id="fxSw_tilt" data-fx="tilt" type="button" role="switch" aria-checked="true" aria-label="3D card tilt"><i></i></button></div>
         </div>
         <p class="me-hint">Mouse and trackpad only. Each effect can be switched on or off on its own.</p>
+      </div>
+      <div class="settings-block">
+        <label>Sound</label>
+        <div class="fx-switches">
+          <div class="fx-switch-row"><span>Sound effects</span><button class="fx-switch" id="soundSwitch" type="button" role="switch" aria-checked="true" aria-label="Sound effects"><i></i></button></div>
+        </div>
+        <p class="me-hint">A short chime when you reach your target, cover your backlog, or hit a planned departure time. Works while this page stays open.</p>
       </div>
       <div class="settings-block settings-backup">
         <label>Backup</label>
@@ -2539,6 +2581,7 @@
       shiftAnchor = startOfDay(new Date()); // no shift yet: the next one starts today
       showResultCard(false);
       renderWelcomeLine(new Date());
+      rescheduleSounds();
       renderFlipTime(timeEl, '--:--', { charClass: 'roll-char', animClass: 'roll-anim' });
       errorEl.textContent = '👇 Please enter your clock-in time';
       renderFlipTime(workOut, '--');
@@ -2595,6 +2638,7 @@
     state.clockInDate = clockInDate;
     state.clockOutDate = clockOutDate;
     renderWelcomeLine(new Date()); // keep the welcome sub-line live without waiting for the next tick
+    rescheduleSounds();
     state.totalBreakMin = totalBreakMin;
     state.targetWorkMin = targetWorkMin;
 
@@ -2669,6 +2713,72 @@
   function backlogLeftPastTarget(minsPast) {
     const owed = Math.max(0, -getLogDiffSeconds() / 60) - Math.max(0, parseFloat(el.lateMinutes.value) || 0);
     return { owed, left: owed - Math.max(0, minsPast) };
+  }
+
+  // ===== Sound effects (Web Audio, synthesized: no audio files) =====
+  // Special moments get a short chime: target reached, backlog covered, planned departure time.
+  const SOUND_KEY = 'cmoSound';
+  let soundOn = true;
+  try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (e) { /* storage unavailable: sound stays on */ }
+  let audioCtx = null;
+  function audioReady() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { audioCtx = new AC(); } catch (e) { return null; }
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    return audioCtx;
+  }
+  // Browsers only allow audio after a tap / key press, so unlock it on the first interaction
+  ['pointerdown', 'keydown', 'touchend'].forEach(ev => document.addEventListener(ev, () => { if (soundOn) audioReady(); }, { passive: true }));
+
+  function tone(ctx, freq, at, dur, type, vol) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    const t0 = ctx.currentTime + at;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  const SOUNDS = {
+    // rising C major arpeggio that lands on a sparkling held chord
+    target: ctx => { [523.25, 659.25, 783.99].forEach((f, i) => tone(ctx, f, i * 0.11, 0.35, 'triangle', 0.16)); [1046.5, 1318.5, 1568].forEach(f => tone(ctx, f, 0.36, 0.95, 'sine', 0.1)); tone(ctx, 2093, 0.4, 0.6, 'sine', 0.04); },
+    // quick two-note "ta-da"
+    backlog: ctx => { tone(ctx, 783.99, 0, 0.3, 'triangle', 0.15); tone(ctx, 1174.66, 0.14, 0.7, 'triangle', 0.15); tone(ctx, 1567.98, 0.14, 0.7, 'sine', 0.06); },
+    // gentle double chime
+    depart: ctx => { tone(ctx, 1318.5, 0, 0.45, 'sine', 0.12); tone(ctx, 1318.5, 0.22, 0.6, 'sine', 0.12); },
+    // short confirmation when sound is switched on in Settings
+    preview: ctx => { tone(ctx, 880, 0, 0.25, 'sine', 0.1); tone(ctx, 1318.5, 0.1, 0.35, 'sine', 0.1); }
+  };
+  function playSound(name, force) {
+    if (!soundOn && !force) return;
+    const ctx = audioReady();
+    if (!ctx || ctx.state !== 'running') return; // not unlocked yet: stay silent rather than queue
+    try { SOUNDS[name](ctx); } catch (e) { /* audio failed: ignore */ }
+  }
+
+  // Each special moment is a timer set for its exact time (so it also rings while the tab is in the background).
+  // The timers are rebuilt whenever the shift, breaks, target, backlog or planned departure change.
+  let soundTimers = {};
+  function rescheduleSounds() {
+    Object.values(soundTimers).forEach(clearTimeout);
+    soundTimers = {};
+    if (!document.getElementById('clockIn').value || !state.clockOutDate) return;
+    const nowMs = Date.now();
+    const sched = (key, atMs, name) => {
+      const wait = atMs - nowMs;
+      if (wait <= 0 || wait > 2147000000) return;
+      // skip it if the device was asleep and the moment passed long ago
+      soundTimers[key] = setTimeout(() => { if (Date.now() - atMs < 15000) playSound(name); }, wait);
+    };
+    const outMs = state.clockOutDate.getTime();
+    sched('target', outMs, 'target');
+    const owed = Math.max(0, -getLogDiffSeconds() / 60) - Math.max(0, parseFloat(el.lateMinutes.value) || 0);
+    if (owed > 1) sched('cover', outMs + owed * 60000, 'backlog');
+    if (state.earlyDepartureDate) sched('depart', state.earlyDepartureDate.getTime(), 'depart');
   }
 
   // Minutes until the clock-out time (negative once past it), or null when there is no running shift
@@ -3314,6 +3424,7 @@
     if (!earlyTime) {
       earlyResult.textContent = "Enter a time above to see the projected impact on your hours.";
       state.earlyDepartureDate = null;
+      rescheduleSounds();
       el.earlyCountdownWrap.style.display = 'none';
       updateEarlyCountdown();
       return;
@@ -3321,6 +3432,7 @@
     if (!state.clockInDate) {
       earlyResult.textContent = "Please enter your clock-in time first.";
       state.earlyDepartureDate = null;
+      rescheduleSounds();
       el.earlyCountdownWrap.style.display = 'none';
       updateEarlyCountdown();
       return;
@@ -3383,6 +3495,7 @@
       departureDate.setDate(departureDate.getDate() + 1);
     }
     state.earlyDepartureDate = departureDate;
+    rescheduleSounds();
     el.earlyCountdownWrap.style.display = 'block';
     updateEarlyCountdown();
   }
@@ -3643,6 +3756,7 @@
   }
 
   function calculateLog() {
+    rescheduleSounds(); // the backlog-covered moment depends on the log balance
     updateLogChip();
     renderMyMonth();
     renderLogSummary();
@@ -4866,7 +4980,7 @@
       if (!valid) { backupMessage('That doesn\'t look like a Clock me Out backup file.', true); return; }
       resettingData = true; // nothing re-saves over the restored data before the reload
       try {
-        Object.keys(localStorage).filter(k => k.startsWith('cmo') && k !== 'cmoTheme' && k !== 'cmoView' && k !== 'cmoFx').forEach(k => localStorage.removeItem(k));
+        Object.keys(localStorage).filter(k => k.startsWith('cmo') && k !== 'cmoTheme' && k !== 'cmoView' && k !== 'cmoFx' && k !== 'cmoSound').forEach(k => localStorage.removeItem(k));
         keys.forEach(k => localStorage.setItem(k, data[k]));
       } catch (e) { resettingData = false; backupMessage('Couldn\'t write to storage, nothing was restored.', true); return; }
       backupMessage('Restoring…');
@@ -4883,6 +4997,16 @@
     settingsToggle.setAttribute('aria-expanded', String(open));
   });
 
+  const soundSwitch = document.getElementById('soundSwitch');
+  const syncSoundSwitch = () => soundSwitch.setAttribute('aria-checked', String(soundOn));
+  syncSoundSwitch();
+  soundSwitch.addEventListener('click', () => {
+    soundOn = !soundOn;
+    try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch (e) { /* storage unavailable */ }
+    syncSoundSwitch();
+    if (soundOn) { const c = audioReady(); if (c) c.resume().then(() => playSound('preview')).catch(() => {}); }
+  });
+
   document.getElementById('meResetBtn').addEventListener('click', () => { resetOverlay.style.display = 'flex'; document.getElementById('resetCancelBtn').focus(); });
 
   document.getElementById('resetCloseBtn').addEventListener('click', closeResetModal);
@@ -4895,7 +5019,7 @@
     resettingData = true;
     try {
       // everything the app stores, except the light/dark and pointer-effects preferences
-      Object.keys(localStorage).filter(k => k.startsWith('cmo') && k !== 'cmoTheme' && k !== 'cmoFx').forEach(k => localStorage.removeItem(k));
+      Object.keys(localStorage).filter(k => k.startsWith('cmo') && k !== 'cmoTheme' && k !== 'cmoFx' && k !== 'cmoSound').forEach(k => localStorage.removeItem(k));
     } catch (e) { /* storage unavailable */ }
     location.reload();
   });
