@@ -1,4 +1,4 @@
-# ⏰ Clock me Out
+# 🖥️ Clock me Out
 
 ![Version](https://img.shields.io/badge/version-v2.266-4FA8E8)
 [![Live demo](https://img.shields.io/badge/live%20demo-vercel-000000?logo=vercel)](https://clock-out-calculator.vercel.app)
