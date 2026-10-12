@@ -1,7 +1,8 @@
-# 🖥️ Clock me Out
+# ⏰ Clock me Out
 
 ![Version](https://img.shields.io/badge/version-v2.266-4FA8E8)
 [![Live demo](https://img.shields.io/badge/live%20demo-vercel-000000?logo=vercel)](https://clock-out-calculator.vercel.app)
+[![License: CC0-1.0](https://img.shields.io/badge/license-CC0%201.0-lightgrey)](https://github.com/BasilMelepat/Clock-Out-Calculator/blob/main/LICENSE)
 ![Single file](https://img.shields.io/badge/single--file-HTML%20%2F%20JS-0B2A4A)
 ![No build](https://img.shields.io/badge/build-none-1E8E5A)
 
@@ -11,7 +12,7 @@ The whole app is **one HTML file**. No build step, no framework, no server, no a
 
 **🔗 Live app: [clock-out-calculator.vercel.app](https://clock-out-calculator.vercel.app)**
 
-👨‍💻 Developed by **Basil Melepat**, a designer turned developer.
+👨‍💻 Developed by **Basil Melepat**.
 
 **Current version: v2.266** (shown in the badge at the top of the app; tap it to reload the page)
 
@@ -114,6 +115,7 @@ Clearing your browser's site data removes your logs, so download a backup now an
 
 ```
 clock-out-calculator-v2.html   # the entire app (HTML, CSS and JS)
+LICENSE                        # CC0 1.0 Universal
 README.md
 ```
 
@@ -127,4 +129,6 @@ This is a hobby project with no finish line: new ideas keep landing. Issues and 
 
 ## License
 
-© 2026 Basil Melepat. No open-source license has been specified yet, so all rights are reserved until a `LICENSE` file is added.
+This project is released into the public domain under the [**CC0 1.0 Universal**](https://github.com/BasilMelepat/Clock-Out-Calculator/blob/main/LICENSE) dedication. You can copy, modify, host and use it for any purpose, including commercial use, without asking permission. Credit is appreciated but not required.
+
+Created by Basil Melepat, 2026.
