@@ -1599,10 +1599,10 @@
   .mascot-lg { --mascot-size: 128px; }
   .welcome-bubble { position: relative; flex: 1; min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--sky-light); }
   .welcome-bubble::before { content: ''; position: absolute; left: -7px; top: 50%; width: 12px; height: 12px; background: var(--sky-light); border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); transform: translateY(-50%) rotate(45deg); }
-  .welcome-greeting { font-size: 19px; font-weight: 800; color: var(--deep); line-height: 1.2; overflow-wrap: anywhere; }
+  .welcome-greeting { font-size: 17.5px; font-weight: 800; color: var(--deep); line-height: 1.2; overflow-wrap: anywhere; }
   .welcome-line { margin-top: 4px; font-size: 13px; font-weight: 600; line-height: 1.4; color: var(--muted); }
   .title-actions { display: flex; align-items: center; gap: 8px; }
-  @media (max-width: 780px) { .mascot-lg { --mascot-size: 92px; } .welcome-card { gap: 12px; padding: 12px 14px; } .welcome-greeting { font-size: 17px; } }
+  @media (max-width: 780px) { .mascot-lg { --mascot-size: 92px; } .welcome-card { gap: 12px; padding: 12px 14px; } .welcome-greeting { font-size: 16px; } }
 
   /* ---- Settings card (Overview) ---- */
   .settings-block { padding-top: 14px; margin-top: 14px; border-top: 1px dashed var(--line); }
@@ -1733,6 +1733,14 @@
   .settings-modal .settings-body { padding: 0; }
   .settings-modal .settings-body > .settings-block:first-child { padding-top: 0; margin-top: 0; border-top: none; }
   @media (max-width: 780px) { .view-tab .tab-emoji { display: none; } }
+  /* Calendar: holidays and absent days */
+  .calendar-cell .cal-day-tag { font-size: 7.5px; letter-spacing: 0.01em; }
+  .calendar-cell.is-holiday { background: rgba(139, 108, 224, 0.16); color: #6B4FC8; }
+  .calendar-cell.is-absent { background: rgba(224, 69, 60, 0.13); color: #C0392B; }
+  body.dark-mode .calendar-cell.is-holiday { background: rgba(167, 139, 250, 0.18); color: #B9A4FF; }
+  body.dark-mode .calendar-cell.is-absent { background: rgba(255, 107, 96, 0.16); color: #FF8A80; }
+  .calendar-dot.holiday { background: #8B6CE0; }
+  .calendar-dot.absent { background: #E0453C; }
 </style>
 </head>
 <body>
@@ -1741,7 +1749,7 @@
     <span class="brand-mark" id="brandMark" aria-hidden="true">🖥️</span>
     <span class="brand-text">
       <span class="app-header-title" id="brandTitle" role="link" tabindex="0" title="Go to Shift Details">Clock me Out</span>
-      <span class="brand-meta"><span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.269</span><span class="user-chip" id="userChip" hidden></span></span>
+      <span class="brand-meta"><span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.271</span><span class="user-chip" id="userChip" hidden></span></span>
     </span>
   </div>
   <div class="view-bar" id="viewBar" data-view="overview">
@@ -1988,6 +1996,8 @@
           <span><i class="calendar-dot ahead"></i> Ahead / On target</span>
           <span><i class="calendar-dot short"></i> Short</span>
           <span><i class="calendar-dot none"></i> No entry</span>
+          <span><i class="calendar-dot holiday"></i> Holiday</span>
+          <span><i class="calendar-dot absent"></i> Absent</span>
         </div>
       </div>
       <div class="log-summary clear" style="margin-top:14px;" id="logSummary">Log your daily hours to track your running-late balance automatically.</div>
@@ -2722,23 +2732,25 @@
 
   // Welcome card: a punchy greeting that follows the time of day (and the day of the week), plus the name when we have one.
   // One line is picked at random per time slot and kept until the slot changes, so it never flickers.
+  // Every line carries {name} so the name sits inside the sentence. An optional third item is the wording used when no name is saved
+  // (lines with ", {name}" or "{name}, " just drop it).
   const GREETINGS = {
-    dawn:    [['Rise and shine', '🌅'], ['Early bird mode', '🐦'], ['Fresh start', '🌱'], ['Up before the sun', '☀️']],
-    morning: [['Let\'s get it', '🚀'], ['Look who\'s here', '😎'], ['Cape on', '🦸']],
-    lunch:   [['Lunch break unlocked', '🔓'], ['Feed the engine', '🍔'], ['Halftime, champ', '🏆'], ['Fork in hand', '🍴'], ['Stomach says hi', '👋']],
-    midday:  [['Power hour', '⚡'], ['In the zone', '🎯'], ['Keep the momentum', '🔥'], ['Cruising along', '😎']],
-    evening: [['Final stretch', '🏁'], ['Golden hour', '🌇'], ['Finish strong', '💪'], ['Almost there', '🎉']],
-    night:   [['Night owl mode', '🦉'], ['Burning the midnight oil', '🌙'], ['Still going strong', '🌠'], ['Moonlight shift', '🌃']],
-    friday:  [['Friday energy', '🎉'], ['Almost the weekend', '🥳'], ['Weekend loading', '🕺']],
-    weekend: [['Weekend warrior', '🛡️'], ['Bonus round', '🎮'], ['Dedicated, aren\'t you', '🫡']],
+    dawn:    [['Rise and shine, {name}', '🌅'], ['Early bird mode, {name}', '🐦'], ['{name}, fresh start ahead', '🌱', 'Fresh start ahead'], ['Up before the sun, {name}', '☀️']],
+    morning: [['Let\'s get it, {name}', '🚀'], ['Look who\'s here, {name}', '😎'], ['Cape on, {name}', '🦸']],
+    lunch:   [['Lunch break unlocked, {name}', '🔓'], ['Feed the engine, {name}', '🍔'], ['Halftime, {name}', '🏆'], ['Fork in hand, {name}', '🍴'], ['{name}, your stomach says hi', '👋']],
+    midday:  [['Power hour, {name}', '⚡'], ['{name} is in the zone', '🎯', 'In the zone'], ['Keep the momentum, {name}', '🔥'], ['Cruising along, {name}', '😎']],
+    evening: [['Final stretch, {name}', '🏁'], ['Golden hour, {name}', '🌇'], ['Finish strong, {name}', '💪'], ['Almost there, {name}', '🎉']],
+    night:   [['Night owl mode, {name}', '🦉'], ['Burning the midnight oil, {name}', '🌙'], ['Still going strong, {name}', '🌠'], ['Moonlight shift, {name}', '🌃']],
+    friday:  [['Friday energy, {name}', '🎉'], ['{name}, almost the weekend', '🥳', 'Almost the weekend'], ['Weekend loading, {name}', '🕺']],
+    weekend: [['Weekend warrior, {name}', '🛡️'], ['Bonus round, {name}', '🎮'], ['Dedicated, aren\'t you, {name}', '🫡']],
     // Shift-progress lines: these take over from the time-of-day lines as the clock-out time gets close (or passes)
-    near60:  [['Home stretch', '🏁'], ['Last hour, let\'s go', '⏱️'], ['One hour to freedom', '🕊️']],
-    near30:  [['Almost there', '🎉'], ['Smell that freedom', '👃'], ['Bags half packed', '🎒']],
-    near10:  [['Final countdown', '⏳'], ['Wrap it up', '🎬'], ['Shutting down soon', '💻']],
-    done:    [['Target smashed', '🏆'], ['Mission complete', '🎯'], ['Clocked out in spirit', '🫡']],
-    over30:  [['Overtime hero', '🦸'], ['Bonus minutes', '🎁'], ['Go home, legend', '🏠']],
-    over120: [['Seriously, go home', '🫠'], ['Absolute workhorse', '🐴'], ['Touch grass, champion', '🌱']],
-    payback: [['Backlog buster', '💪'], ['Paying it back', '🏦'], ['Clearing the slate', '🧹']]
+    near60:  [['Home stretch, {name}', '🏁'], ['Last hour, {name}, let\'s go', '⏱️', 'Last hour, let\'s go'], ['One hour to freedom, {name}', '🕊️']],
+    near30:  [['Almost there, {name}', '🎉'], ['Smell that freedom, {name}', '👃'], ['Bags half packed, {name}', '🎒']],
+    near10:  [['Final countdown, {name}', '⏳'], ['Wrap it up, {name}', '🎬'], ['Shutting down soon, {name}', '💻']],
+    done:    [['Target smashed, {name}', '🏆'], ['Mission complete, {name}', '🎯'], ['{name} clocked out in spirit', '🫡', 'Clocked out in spirit']],
+    over30:  [['Overtime hero, {name}', '🦸'], ['Bonus minutes, {name}', '🎁'], ['Go home, {name}, you legend', '🏠', 'Go home, you legend']],
+    over120: [['Seriously, {name}, go home', '🫠', 'Seriously, go home'], ['Absolute workhorse, {name}', '🐴'], ['Touch grass, {name}', '🌱']],
+    payback: [['Backlog buster, {name}', '💪'], ['{name} is paying it back', '🏦', 'Paying it back'], ['Clearing the slate, {name}', '🧹']]
   };
 
   // Backlog from this month's Daily Log that today's target does NOT already include (the Running Late card is already
@@ -2913,13 +2925,17 @@
   function renderWelcomeGreeting() {
     const nowD = new Date();
     renderWelcomeLine(nowD);
-    const [word, emoji] = greetingFor(nowD);
+    const [word, emoji, bare] = greetingFor(nowD);
     const key = word + '|' + userName;
     const elG = document.getElementById('welcomeGreeting');
     if (elG.dataset.key === key) return;
     elG.dataset.key = key;
     elG.textContent = '';
-    if (userName) {
+    if (word.includes('{name}')) {
+      // the name is part of the sentence ("BasBro, your stomach says hi"); without a name the sentence starts at the next word
+      const text = userName ? word.replace('{name}', userName) : (bare || word.replace(', {name}', '').replace('{name}, ', '')).replace(/^./, c => c.toUpperCase());
+      elG.textContent = text + ' ' + emoji;
+    } else if (userName) {
       const first = document.createElement('span');
       first.textContent = word + ', ';
       const name = document.createElement('span');
@@ -4050,6 +4066,9 @@
 
     const today = new Date();
     const todayISO = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    // Past working days with nothing logged read as absent, but only from the first logged day on
+    // (earlier days are from before the log was kept, not absences)
+    const firstLoggedISO = Object.keys(entriesByDate).sort()[0] || null;
 
     calendarGrid.innerHTML = '';
 
@@ -4071,6 +4090,14 @@
         cell.classList.add('has-entry', getEntryStatus(entry));
         cell.title = `${pad(entry.hh)}:${pad(entry.mm)}:${pad(entry.ss)} logged (target ${entry.target}h). Click to edit.`;
         hoursHtml = `<span class="cal-day-hours">${formatCellHours(entry)}</span>`;
+      } else if (holidays.has(iso)) {
+        cell.classList.add('is-holiday');
+        cell.title = 'Holiday. Click to add an entry for this day';
+        hoursHtml = '<span class="cal-day-hours cal-day-tag">Holiday</span>';
+      } else if (absentDays.has(iso) || (firstLoggedISO && iso >= firstLoggedISO && iso < todayISO && !isWeeklyOffDay(new Date(calendarYear, calendarMonth, day).getDay()))) {
+        cell.classList.add('is-absent');
+        cell.title = 'Absent (nothing logged). Click to add an entry for this day';
+        hoursHtml = '<span class="cal-day-hours cal-day-tag">Absent</span>';
       } else {
         cell.title = 'Click to add an entry for this day';
       }
@@ -4673,6 +4700,7 @@
   }
 
   function renderMyMonth() {
+    if (calendarYear !== null) renderCalendar(); // holidays and absences are drawn in the calendar too
     const $ = id => document.getElementById(id);
     const now = new Date();
     const { y, m, isCurrent } = selectedMonth();
