@@ -1340,7 +1340,7 @@
     .wrap.wrap-me { grid-template-columns: 1fr 1fr; max-width: 900px; }
     .wrap.wrap-overview > .col:nth-child(3),
     .wrap.wrap-log > .col:nth-child(3),
-    .wrap.wrap-me > .col:nth-child(3) { grid-column: 1 / -1; }
+    .wrap.wrap-me > #mePastCol { grid-column: 1 / -1; }
   }
   @media (max-width: 780px) {
     .wrap.wrap-overview,
@@ -1611,21 +1611,6 @@
   .settings-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .settings-block .me-hint { margin-top: 8px; }
 
-  /* Settings: a slim row in Overview that expands in place (collapsed by default) */
-  .settings-card { padding: 0; }
-  .settings-open { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 18px; border: none; border-radius: inherit; background: transparent; color: var(--deep); font: inherit; text-align: left; cursor: pointer; }
-  .settings-open:hover { background: var(--sky-light); }
-  .settings-open:focus-visible { outline: 2px solid var(--sky); outline-offset: -2px; }
-  .settings-open-main { font-size: 14px; font-weight: 800; white-space: nowrap; }
-  .settings-open-sub { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 600; color: var(--muted); }
-  .settings-open .set-chev { flex: none; color: var(--muted); font-size: 22px; line-height: 1; }
-  .settings-open .set-chev { transition: transform 0.2s ease; }
-  .settings-open[aria-expanded="true"] .set-chev { transform: rotate(90deg); }
-  .settings-open[aria-expanded="true"] { border-bottom: 1px solid var(--line); border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-  .settings-body { padding: 4px 18px 18px; }
-  .settings-body[hidden] { display: none; }
-  .settings-body > .settings-block:first-child { padding-top: 10px; margin-top: 0; border-top: none; }
-  @media (prefers-reduced-motion: reduce) { .settings-open .set-chev { transition: none; } }
   /* Backup / restore needs a file picker and downloads, so it is hidden on phones and touch devices */
   @media (max-width: 780px), (hover: none) and (pointer: coarse) { .settings-backup { display: none; } }
 
@@ -1641,7 +1626,6 @@
   #brandMark { cursor: pointer; }
   .app-header-title:focus-visible { outline: 2px solid var(--sky); outline-offset: 3px; border-radius: 6px; }
 
-  @media (min-width: 781px) { .greeting-name { display: block; } }
 
   /* ===== POINTER EFFECTS (mouse / trackpad only; see section 11 of the script) =====
      html classes: fx-on (master), fx-cur (cursor), fx-glow-on (spotlight), fx-tilt-on (tilt + shine), fx-seen (pointer is in the window) */
@@ -1709,6 +1693,46 @@
     body.dark-mode .app-header { background: rgba(11, 22, 34, 0.78); }
     .app-header .view-tabs { box-shadow: none; }
   }
+
+  /* ===== v2.267: header actions (settings + bulb), Overview layout, settings modal ===== */
+  .header-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+  .header-actions .header-icon-btn {
+    width: 36px; height: 36px; padding: 0; color: var(--deep);
+    background: var(--sky-light); border: 1px solid var(--line);
+  }
+  .header-actions .header-icon-btn:hover { background: var(--card); border-color: var(--sky); color: var(--sky); }
+  .header-actions .header-icon-btn:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; }
+  .header-actions #settingsBtn:hover { color: var(--deep); }
+  .icon-bulb { overflow: visible; color: var(--muted); }
+  .icon-bulb .glass { fill: #FFD43B; stroke: #D99A00; transition: fill 0.25s ease, stroke 0.25s ease; }
+  .icon-bulb .base { stroke: #D99A00; transition: stroke 0.25s ease; }
+  .icon-bulb .rays { stroke: #E8A800; opacity: 1; transition: opacity 0.25s ease; }
+  body:not(.dark-mode) .icon-bulb { filter: drop-shadow(0 0 3px rgba(255, 200, 40, 0.75)); }
+  body.dark-mode .icon-bulb .glass { fill: none; stroke: currentColor; }
+  body.dark-mode .icon-bulb .base { stroke: currentColor; }
+  body.dark-mode .icon-bulb .rays { opacity: 0; }
+  body.dark-mode .header-actions .header-icon-btn:hover .icon-bulb { color: var(--deep); }
+  @media (max-width: 780px) { .header-actions .header-icon-btn { width: 38px; height: 38px; } }
+  @media (prefers-reduced-motion: reduce) { .icon-bulb .glass, .icon-bulb .base, .icon-bulb .rays { transition: none; } }
+
+  /* Overview: Monthly Summary across the top, then Month Goal | Weekday Pattern | Past Months */
+  .me-summary { grid-column: 1 / -1; position: relative; z-index: 5; }
+  .me-summary-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 16px; }
+  .me-summary-head .card-title { margin-bottom: 0; }
+  .me-summary-head .me-month-picker { position: relative; margin: 0; flex: 0 1 300px; min-width: 220px; }
+  .me-summary .me-month-menu { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 40; box-shadow: 0 14px 34px rgba(11, 42, 74, 0.2); }
+  .me-summary .me-tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  @media (max-width: 1100px) { .me-summary .me-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 560px) {
+    .me-summary .me-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .me-summary-head .me-month-picker { flex: 1 1 100%; }
+  }
+
+  /* Settings modal */
+  .settings-modal { max-width: 460px; max-height: calc(100vh - 40px); overflow-y: auto; }
+  .settings-modal .settings-body { padding: 0; }
+  .settings-modal .settings-body > .settings-block:first-child { padding-top: 0; margin-top: 0; border-top: none; }
+  @media (max-width: 780px) { .view-tab .tab-emoji { display: none; } }
 </style>
 </head>
 <body>
@@ -1717,23 +1741,29 @@
     <span class="brand-mark" id="brandMark" aria-hidden="true">🖥️</span>
     <span class="brand-text">
       <span class="app-header-title" id="brandTitle" role="link" tabindex="0" title="Go to Shift Details">Clock me Out</span>
-      <span class="brand-meta"><span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.266</span><span class="user-chip" id="userChip" hidden></span></span>
+      <span class="brand-meta"><span class="version-badge" id="versionBadge" role="button" tabindex="0" title="Reload page" aria-label="Reload page">v2.269</span><span class="user-chip" id="userChip" hidden></span></span>
     </span>
   </div>
   <div class="view-bar" id="viewBar" data-view="overview">
     <div class="view-tabs" role="tablist" aria-label="Views">
-      <button class="view-tab active" id="tabOverview" type="button" role="tab" aria-selected="true">💼 Shift Details</button>
-      <button class="view-tab" id="tabLog" type="button" role="tab" aria-selected="false">📅 Daily Log</button>
-      <button class="view-tab" id="tabMe" type="button" role="tab" aria-selected="false">📊 Overview</button>
+      <button class="view-tab active" id="tabOverview" type="button" role="tab" aria-selected="true"><span class="tab-emoji">💼 </span>Shift Details</button>
+      <button class="view-tab" id="tabLog" type="button" role="tab" aria-selected="false"><span class="tab-emoji">📅 </span>Daily Log</button>
+      <button class="view-tab" id="tabMe" type="button" role="tab" aria-selected="false"><span class="tab-emoji">📊 </span>Overview</button>
     </div>
   </div>
-  <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
+  <div class="header-actions">
+    <button id="settingsBtn" class="theme-toggle-btn header-icon-btn" type="button" aria-label="Settings" title="Settings" aria-haspopup="dialog"><svg class="icon-gear" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <button id="themeToggleBtn" class="theme-toggle-btn header-icon-btn" type="button" aria-label="Light is on. Switch to dark theme" title="Light is on. Click to switch it off" aria-pressed="true"><svg class="icon-bulb" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="rays" d="M2 8h1.5M20.5 8H22M4.6 2.6l1 1M19.4 2.6l-1 1"/><path class="glass" d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path class="base" d="M9 18h6M10 22h4"/></svg></button>
+  </div>
 </header>
 <script>
   (function () {
     if (localStorage.getItem('cmoTheme') === 'dark') {
       document.body.classList.add('dark-mode');
-      document.getElementById('themeToggleBtn').textContent = '☀️';
+      var b = document.getElementById('themeToggleBtn');
+      b.setAttribute('aria-pressed', 'false');
+      b.setAttribute('aria-label', 'Light is off. Switch to light theme');
+      b.title = 'Light is off. Click to switch it on';
     }
   })();
 </script>
@@ -1988,14 +2018,73 @@
 </div>
 
 <div class="wrap wrap-me" id="viewMe" hidden>
-  <div class="col">
-    <div class="card settings-card" id="settingsCard">
-      <button class="settings-open" id="settingsToggle" type="button" aria-expanded="false" aria-controls="settingsBody">
-        <span class="settings-open-main">⚙️ Settings</span>
-        <span class="settings-open-sub">Name, effects and data</span>
-        <span class="set-chev" aria-hidden="true">›</span>
+  <div class="card me-summary">
+    <div class="me-summary-head">
+      <div class="card-title"><span id="meMonthTitle">📈 This Month</span></div>
+    <div class="me-month-picker" id="meMonthPicker" hidden>
+      <button type="button" class="me-month-btn" id="meMonthBtn" aria-haspopup="listbox" aria-expanded="false">
+        <span class="me-month-btn-main">📅 <span id="meMonthBtnLabel">Month</span></span>
+        <span class="me-month-badge" id="meMonthBadge" hidden>Current</span>
+        <span class="me-chev" aria-hidden="true">▾</span>
       </button>
-      <div class="settings-body" id="settingsBody" hidden>
+      <div class="me-month-menu" id="meMonthMenu" role="listbox" hidden></div>
+    </div>
+    </div>
+    <div class="me-tiles">
+      <div class="me-tile"><span class="me-tile-label">Days logged</span><b class="me-tile-value" id="meDays">—</b><span class="me-tile-sub" id="meDaysSub">&nbsp;</span></div>
+      <div class="me-tile"><span class="me-tile-label">Average / day</span><b class="me-tile-value" id="meAvg">—</b><span class="me-tile-sub" id="meAvgSub">&nbsp;</span></div>
+      <div class="me-tile"><span class="me-tile-label">Balance</span><b class="me-tile-value" id="meBalance">—</b><span class="me-tile-sub" id="meBalanceSub">&nbsp;</span></div>
+      <div class="me-tile"><span class="me-tile-label">Best day</span><b class="me-tile-value" id="meBest">—</b><span class="me-tile-sub" id="meBestSub">&nbsp;</span></div>
+      <div class="me-tile"><span class="me-tile-label">Met target</span><b class="me-tile-value" id="meMet">—</b><span class="me-tile-sub" id="meMetSub">&nbsp;</span></div>
+      <div class="me-tile"><span class="me-tile-label">Target streak</span><b class="me-tile-value" id="meStreak">—</b><span class="me-tile-sub" id="meStreakSub">&nbsp;</span></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <div class="card-title"><span>🎯 Month Goal</span></div>
+      <div class="me-goal">
+        <div class="me-goal-main" id="meGoalMain">—</div>
+        <div class="me-goal-sub" id="meGoalSub"></div>
+      </div>
+      <div class="me-off-row me-holiday-row">
+        <span id="meHolidayLine">Holidays: None</span>
+        <button type="button" class="me-link-btn" id="meHolidayEdit">✏️ Edit</button>
+      </div>
+      <div class="me-pills" id="meHolidayPills"></div>
+      <div class="me-off-row me-absent-row" id="meAbsentRow" hidden>
+        <span id="meAbsentLine">Absent: None</span>
+      </div>
+      <div class="me-pills" id="meAbsentPills"></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <div class="card-title"><span id="meWeekdayTitle">🗓️ Weekday Pattern</span></div>
+      <div id="meWeekdays"></div>
+      <div class="me-insight" id="meWeekdayInsight"></div>
+    </div>
+
+    <div class="app-footer footer-desktop">© 2026 Basil Melepat · Designed for You</div>
+  </div>
+
+  <div class="col" id="mePastCol" hidden>
+    <div class="card">
+      <div class="card-title"><span>🕰️ Past Months</span></div>
+      <div id="mePastMonths"></div>
+      <div class="me-insight" id="mePastInsight"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settingsOverlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+  <div class="modal-box settings-modal">
+    <div class="modal-header">
+      <span id="settingsModalTitle">⚙️ Settings</span>
+      <button class="modal-close" id="settingsCloseBtn" type="button" aria-label="Close">❌</button>
+    </div>
+    <div class="settings-body" id="settingsBody">
       <div class="settings-block">
         <label for="meNameInput">Your name</label>
         <div class="settings-row">
@@ -2038,62 +2127,6 @@
           <button class="me-danger-btn" id="meResetBtn" type="button">🚽 Flush Everything</button>
         </div>
       </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><span id="meMonthTitle">📈 This Month</span></div>
-      <div class="me-month-picker" id="meMonthPicker" hidden>
-        <button type="button" class="me-month-btn" id="meMonthBtn" aria-haspopup="listbox" aria-expanded="false">
-          <span class="me-month-btn-main">📅 <span id="meMonthBtnLabel">Month</span></span>
-          <span class="me-month-badge" id="meMonthBadge" hidden>Current</span>
-          <span class="me-chev" aria-hidden="true">▾</span>
-        </button>
-        <div class="me-month-menu" id="meMonthMenu" role="listbox" hidden></div>
-      </div>
-      <div class="me-tiles">
-        <div class="me-tile"><span class="me-tile-label">Days logged</span><b class="me-tile-value" id="meDays">—</b><span class="me-tile-sub" id="meDaysSub">&nbsp;</span></div>
-        <div class="me-tile"><span class="me-tile-label">Average / day</span><b class="me-tile-value" id="meAvg">—</b><span class="me-tile-sub" id="meAvgSub">&nbsp;</span></div>
-        <div class="me-tile"><span class="me-tile-label">Balance</span><b class="me-tile-value" id="meBalance">—</b><span class="me-tile-sub" id="meBalanceSub">&nbsp;</span></div>
-        <div class="me-tile"><span class="me-tile-label">Best day</span><b class="me-tile-value" id="meBest">—</b><span class="me-tile-sub" id="meBestSub">&nbsp;</span></div>
-        <div class="me-tile"><span class="me-tile-label">Met target</span><b class="me-tile-value" id="meMet">—</b><span class="me-tile-sub" id="meMetSub">&nbsp;</span></div>
-        <div class="me-tile"><span class="me-tile-label">Target streak</span><b class="me-tile-value" id="meStreak">—</b><span class="me-tile-sub" id="meStreakSub">&nbsp;</span></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col">
-    <div class="card">
-      <div class="card-title"><span>🎯 Month Goal</span></div>
-      <div class="me-goal">
-        <div class="me-goal-main" id="meGoalMain">—</div>
-        <div class="me-goal-sub" id="meGoalSub"></div>
-      </div>
-      <div class="me-off-row me-holiday-row">
-        <span id="meHolidayLine">Holidays: None</span>
-        <button type="button" class="me-link-btn" id="meHolidayEdit">✏️ Edit</button>
-      </div>
-      <div class="me-pills" id="meHolidayPills"></div>
-      <div class="me-off-row me-absent-row" id="meAbsentRow" hidden>
-        <span id="meAbsentLine">Absent: None</span>
-      </div>
-      <div class="me-pills" id="meAbsentPills"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><span id="meWeekdayTitle">🗓️ Weekday Pattern</span></div>
-      <div id="meWeekdays"></div>
-      <div class="me-insight" id="meWeekdayInsight"></div>
-    </div>
-
-    <div class="app-footer footer-desktop">© 2026 Basil Melepat · Designed for You</div>
-  </div>
-
-  <div class="col" id="mePastCol" hidden>
-    <div class="card">
-      <div class="card-title"><span>🕰️ Past Months</span></div>
-      <div id="mePastMonths"></div>
-      <div class="me-insight" id="mePastInsight"></div>
     </div>
   </div>
 </div>
@@ -4989,13 +5022,17 @@
     reader.readAsText(file);
   });
 
-  // Settings expands and collapses in place
-  const settingsToggle = document.getElementById('settingsToggle'), settingsBody = document.getElementById('settingsBody');
-  settingsToggle.addEventListener('click', () => {
-    const open = settingsBody.hidden;
-    settingsBody.hidden = !open;
-    settingsToggle.setAttribute('aria-expanded', String(open));
+  // Settings is a modal opened from the gear in the header (available on every tab)
+  const settingsOverlay = document.getElementById('settingsOverlay'), settingsBtn = document.getElementById('settingsBtn');
+  const closeSettingsModal = () => { settingsOverlay.style.display = 'none'; settingsBtn.focus(); };
+  settingsBtn.addEventListener('click', () => {
+    if (document.activeElement !== meNameInput) meNameInput.value = userName;
+    document.getElementById('meNameHint').hidden = !!userName;
+    settingsOverlay.style.display = 'flex';
+    document.getElementById('settingsCloseBtn').focus();
   });
+  document.getElementById('settingsCloseBtn').addEventListener('click', closeSettingsModal);
+  settingsOverlay.addEventListener('click', e => { if (e.target === settingsOverlay) closeSettingsModal(); });
 
   const soundSwitch = document.getElementById('soundSwitch');
   const syncSoundSwitch = () => soundSwitch.setAttribute('aria-checked', String(soundOn));
@@ -5028,8 +5065,10 @@
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     setMonthMenuOpen(false);
-    if (resetOverlay.style.display === 'flex') closeResetModal();
-    if (document.getElementById('holidayOverlay').style.display === 'flex') closeHolidayModal();
+    let closed = false;
+    if (resetOverlay.style.display === 'flex') { closeResetModal(); closed = true; }
+    if (document.getElementById('holidayOverlay').style.display === 'flex') { closeHolidayModal(); closed = true; }
+    if (!closed && settingsOverlay.style.display === 'flex') closeSettingsModal();
   });
 
   // ========================================================================
@@ -5062,10 +5101,13 @@
     window.scrollTo(0, 0);
   }
 
+  // The bulb is the theme switch: light on = light theme, light off = dark theme
   themeToggleBtn.addEventListener('click', () => {
     const isDark = document.body.classList.toggle('dark-mode');
-    themeToggleBtn.textContent = isDark ? '☀️' : '🌙';
-    localStorage.setItem('cmoTheme', isDark ? 'dark' : 'light');
+    themeToggleBtn.setAttribute('aria-pressed', String(!isDark));
+    themeToggleBtn.setAttribute('aria-label', isDark ? 'Light is off. Switch to light theme' : 'Light is on. Switch to dark theme');
+    themeToggleBtn.title = isDark ? 'Light is off. Click to switch it on' : 'Light is on. Click to switch it off';
+    try { localStorage.setItem('cmoTheme', isDark ? 'dark' : 'light'); } catch (e) { /* storage unavailable */ }
   });
 
   versionBadge.addEventListener('click', () => location.reload());
@@ -5128,18 +5170,18 @@
   // ========================================================================
   // 11. POINTER EFFECTS
   // Five independent effects: custom cursor (dot + trailing ring), cursor trail, card spotlight,
-  // magnetic buttons, 3D card tilt. Each has its own switch in Overview > Settings (plus a master switch).
+  // magnetic buttons, 3D card tilt. Each has its own switch in the Settings modal (plus a master switch).
   // Mouse / trackpad only, never with "reduce motion". One requestAnimationFrame loop drives everything
   // and goes to sleep when the pointer is still.
   // ========================================================================
 
   const FX_KEY = 'cmoFx';
-  const FX_DEFAULTS = { on: true, cursor: true, trail: true, glow: true, magnet: true, tilt: true };
+  const FX_DEFAULTS = { on: true, cursor: true, trail: true, glow: true, magnet: false, tilt: false };
   const FX_CAPABLE = window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
     !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const FX_TEXT = 'input:not([type=button]):not([type=submit]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]), textarea';
   const FX_CLICKABLE = 'button, a[href], select, label, summary, [role="button"], [role="switch"], [role="tab"], [role="link"], .calendar-cell:not(.empty), .me-month-opt';
-  const FX_MAGNETIC = '.add-btn, .btn-ghost, .modal-import-btn, .modal-upload-btn, .sync-btn, .me-link-btn, .me-save-btn, .me-danger-btn, .log-copy-btn, .theme-toggle-btn, .log-chip, .x-btn';
+  const FX_MAGNETIC = '.add-btn, .btn-ghost, .modal-import-btn, .modal-upload-btn, .sync-btn, .me-link-btn, .me-save-btn, .me-danger-btn, .log-copy-btn, .theme-toggle-btn:not(#settingsBtn), .log-chip, .x-btn';
   const FX_TRAIL_MS = 520;
   const fx = {
     opts: Object.assign({}, FX_DEFAULTS),
