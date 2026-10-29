@@ -10,7 +10,7 @@ A work-hours companion that tells you **when you can clock out**. Enter your shi
 
 The whole app is **one HTML file**. No build step, no framework, no server, no account.
 
-**🔗 Live app: [clock-out-calculator.vercel.app](https://clock-out-calculator.vercel.app)**
+**🔗 Live app: [clock-me-out.vercel.app](https://clock-me-out.vercel.app)**
 
 👨‍💻 Developed by **Basil Melepat**.
 
